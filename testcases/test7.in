@@ -1,0 +1,10 @@
+actor Ali<15>
+	receiver Ahmad( int a , char[ 2 ][ 2 ][ 3 ] c )
+		char afs = 'b'
+		char as = "ah"[ 1 ]
+		as = 'b'
+		int ba = 24
+		ba = -ba * 24
+		int[ 5 ] ae = { 1 , 4 , 3 , 2 , 1 }
+	end
+end

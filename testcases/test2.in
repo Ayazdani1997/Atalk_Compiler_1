@@ -1,0 +1,28 @@
+
+
+actor Ahmad<13>
+	int a
+	receiver Yazdani( int a , int b )
+		char[ 2 ][ 2 ] sa
+		int c
+		begin
+			int a
+			foreach element in sa
+				int a
+				char[ 2 ] c
+				begin
+					int a
+				end
+			end
+		end
+		int d
+	end
+	int b
+end
+actor Sadr<12>
+	int y
+	receiver la( int[ 2 ][ 2 ] c , int[ 3 ][ 4 ] d )
+		int b
+	end
+	int x
+end

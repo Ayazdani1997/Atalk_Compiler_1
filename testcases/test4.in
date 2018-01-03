@@ -1,0 +1,26 @@
+actor Tehran<123>
+	int t , d
+	int[ 2 ][ 5 ] ghafar
+	receiver Rashid( int a , char[ 2 ][ 2 ] befa , int[ 2 ][ 3 ][ 4 ] buffon )
+		int x
+		int y
+		begin
+			int x
+			int y
+		end
+		begin
+			int x
+			begin
+				int y
+			end
+			int y
+			begin
+				int z
+			end
+		end
+	end
+end
+
+actor Yazdani<123>
+	int t
+end

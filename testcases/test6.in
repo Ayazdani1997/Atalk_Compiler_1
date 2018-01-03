@@ -1,0 +1,13 @@
+actor Ali<15>
+	#char a , b
+	int b
+	#char[ 2 ][ 2 ] d
+	receiver Ahmad( int a , char[ 2 ][ 2 ][ 3 ] c )
+		write( a )
+		int[ 2 ] d
+		#int x = d * a * b
+		int y = a * 2 , z = y
+		int t = a == y
+		a = b + z * 2
+	end
+end

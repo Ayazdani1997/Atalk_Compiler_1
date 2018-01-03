@@ -1,0 +1,76 @@
+actor Tehran<123>
+	int t , d
+	int[ 2 ][ 5 ] ghafar
+	receiver Rashid( int a , char[ 2 ][ 2 ] befa , int[ 2 ][ 3 ][ 4 ] buffon )
+		int x
+		int y
+		begin
+			int x
+			int y
+		end
+		begin
+			#int y
+			int x
+			begin
+				int y
+				quit
+			end
+			begin
+				int z
+				int x
+				foreach element in ghafar[ 2 ]
+					break
+					begin
+						break
+						int[ 2 ][ 2 ][ 3 ] z
+						int x
+					end
+					int z
+					if z <> x * 2
+						break
+						int y
+					elseif z == x * 4
+						int x
+						x = z * 2 + 4
+					else
+						char a
+						x = a[ 1 ] + 2 * s
+					end
+				end	
+			end
+			int y
+		end
+		int z
+		char[ 2 ][ 3 ] ta
+		int t
+	end
+	receiver A( int[ 2 ] a , char[ 2 ][ 2 ] b )
+		int c
+		char[ 2 ][ 123 ][ 4 ] messi
+		foreach ahmadhossein in messi
+			if c
+				int z = 2 * messi + c * a
+				if messi == "ahmad"
+					z = 4 * a[ 1 ]
+				end
+			else
+				int x
+			end
+		end
+	end
+end 
+
+actor Yazdani<123>
+	int t
+	receiver A( int a , char[ 2 ][ 2 ] b )
+		int c
+		char[ 2 ][ 123 ][ 4 ] messi
+		foreach ahmadhossein in messi
+			if c
+				int z
+			else
+				int x
+			end
+		end
+	end
+end

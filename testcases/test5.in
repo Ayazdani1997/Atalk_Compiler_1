@@ -1,0 +1,72 @@
+actor Ali<15>
+	char a , b
+	char[ 2 ][ 2 ] d
+	receiver Ahmad( int a , char[ 2 ][ 2 ][ 3 ] c )
+		write( a )
+		int[ 2 ] d
+		int x = d * a * b
+		int y = a * 2 , z = y
+		a == b
+		a + 2 = b + 2 = d
+		#int foreach
+		foreach element in d
+			#int element = 2
+			char[ 2 ][ 2 ] b
+			write( b[ 1 ] )
+			char[ 2 ][ 3 ] s = ( d + 2 )[ 2 ][ 1 ]
+			begin
+				char[ 2 ][ 2 ] d
+			end
+			#char[ 2 ][ 2 ] d
+			Tehran << Ahmad( a , s )
+			foreach element1 in ( b[ 2 ] = "ah" )
+				char d
+				int element = 2
+			end
+			#int element = 2
+			if( element == 2 )
+				int element = 2
+				y = y + element + s
+				s = s * 2 + ta
+				ta = ta + 2
+			y = element
+			elseif( element / 2 - 1 <> 0 and ( element + 2 / 4 ) * x <> 0 and element > 6 )
+				y = y * element * ( read( 6 ) )[ 3 ]
+				char[ 3 ] string = ( read( 5 ) )[ 2 ]
+				int a = y * element + a
+			end
+			y = element * 7
+		end
+	end
+	char[ 2 ][ 2 ] t
+	int[ 5 ][ 2 ][ 2 ] ta
+	receiver Tehran( int[ 2 ][ 2 ] b )
+		int[ 2 ][ 2 ] a = b
+		begin
+			char[ 2 ][ 2 ] a = t
+			if( a == { { 2 , 2 } , { 2 , 3 } } and b == a and b == { 2 , { 2 , 2 }} and b <> ta[ 1 ] )
+				a = { { 2 , 2 } , { 2 , 12341 }}
+			end
+		end
+	end
+end
+
+actor Tehran <146> 
+	int a , b , c
+	char d
+	receiver A( int a , int b , int[ 2 ][ 2 ][ 3 ] e )
+		int[ 5 ] yazdani
+		int[ 2 ] taz = { 2 , 2 }
+		int[ 2 ] ya
+		es = { { 2 , 2 } , 4 , 3 , a }
+		char[ 2 ][ 4 ] cavani = { "ahma" , "rest" , read( 4 ) }
+		char[ 2 ] string = "ahm"
+		foreach element in es
+			foreach j in element
+				a = a + j and 2
+				#int element = 2
+			end
+			#char element = 'a'
+		end
+	end
+end

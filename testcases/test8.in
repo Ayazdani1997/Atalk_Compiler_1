@@ -1,0 +1,14 @@
+actor sadra<5>
+	receiver init()
+		char[ 2 ][ 5 ] b = { "ahmad" , "ahmay" } , a = { "ahmaz" , "ahmat" }
+		write( b[ 1 ] )
+		int d = 2 * not( 0 )
+		write( d )
+		char[ 2 ][ 2 ][ 5 ] c = { a , b }
+		write( c[ 0 ][ 0 ] )
+		begin
+			int a = 3
+			write( a * 2 )
+		end
+	end
+end

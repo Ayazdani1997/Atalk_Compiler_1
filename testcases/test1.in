@@ -1,0 +1,36 @@
+actor ali<3> 
+	receiver lk(int g,int h)
+		int j=4
+		j=j+1
+		int[3][3] hg
+	end
+	#int hh
+	char t
+	char gg,ff,eee,tr
+	char[4][5][1] ft
+	#int y
+	char t
+end
+actor val<5>
+	int aty
+	receiver kl(int y)
+		int fd
+	end
+	char ee
+	char[4][4] dd
+	int w
+end
+actor kk<2>
+	int abs
+	receiver ds()
+		int at
+		begin
+			int vf
+			break
+		end
+		int bt
+	end
+end
+actor Ahmadhossein<3>
+	int sadr
+end
