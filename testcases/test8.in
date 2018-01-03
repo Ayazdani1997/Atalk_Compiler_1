@@ -8,7 +8,7 @@ actor sadra<5>
 		write( c[ 0 ][ 0 ] )
 		begin
 			int a = 3
-			write( a * 2 )
+			write( { 'a' , 'b' } )
 		end
 	end
 end

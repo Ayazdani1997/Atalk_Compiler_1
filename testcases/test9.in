@@ -1,0 +1,10 @@
+actor sadra<5>
+	receiver init()
+		begin
+			int a = 3
+			int b = 3 == a
+			write( { 'a' , 'b' } )
+			write( b )
+		end
+	end
+end

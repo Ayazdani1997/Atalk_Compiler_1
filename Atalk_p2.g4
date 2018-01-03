@@ -452,6 +452,9 @@ expr_and_tmp returns[SymbolTableTemporaryVariableItem item,int isThereANDoperato
 	;
 
 expr_eq returns[SymbolTableTemporaryVariableItem item]:
+		{
+			mips.addCode( "li \$s4, 1" );
+		}
 		ou=expr_cmp os=expr_eq_tmp
 		{	
 			if($os.isThereEQNEQoperator==0)
@@ -467,15 +470,21 @@ expr_eq returns[SymbolTableTemporaryVariableItem item]:
 					$item = new SymbolTableTemporaryVariableItem( new Variable( "temp" , NoType.getInstance() ) , 0 );
 				else
 						$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				//mips.operationCommand( $os.eqoperator );
+				mips.generateCodeForEquality( $os.eqoperator , $ou.item , $os.isFirstLValue  );
+				mips.addCode( "sw \$s4, 0(\$t6)" );
+				mips.addCode( "addiu \$fp, \$fp, -4" );
+				mips.addCode( "sw \$t6, 0(\$fp)" );
+				mips.addCode( "addiu \$fp, \$fp, 4" );
+				mips.addCode( "addiu \$t6, \$t6, -4" );
 			}
 		}
 	;
 
-expr_eq_tmp returns[SymbolTableTemporaryVariableItem item,int isThereEQNEQoperator,int eqline , String eqoperator ]:
+expr_eq_tmp returns[SymbolTableTemporaryVariableItem item,int isThereEQNEQoperator,int eqline , String eqoperator , int isFirstLValue ]:
 		op=('==' | '<>'){$eqline=$op.line;$isThereEQNEQoperator=1;$expr_assign::couldBeAssigned=0; $eqoperator = $op.text; } 
 		ou=expr_cmp os=expr_eq_tmp
 		{
+			$isFirstLValue = $expr_cmp.item.isLValue;
 			if($os.isThereEQNEQoperator==0)
 				$item=$ou.item;
 			else
@@ -489,7 +498,7 @@ expr_eq_tmp returns[SymbolTableTemporaryVariableItem item,int isThereEQNEQoperat
 					$item = new SymbolTableTemporaryVariableItem( new Variable( "temp" , NoType.getInstance() ) , 0 );
 				else
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				//mips.operationCommand( $op.text );	
+				mips.generateCodeForEquality( $os.eqoperator , $ou.item , $os.isFirstLValue  );	
 			}
 		}
 	|
@@ -540,7 +549,7 @@ expr_cmp_tmp returns[SymbolTableTemporaryVariableItem item,int isThereCMPoperato
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",NoType.getInstance()),0);
 				else
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				mips.operationCommand( $op.text );
+				mips.operationCommand( $os.compoperator );
 			}
 		}
 	|{
@@ -599,7 +608,7 @@ expr_add_tmp returns[SymbolTableTemporaryVariableItem item,int isTherePMoperator
 				}
 				else
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				mips.operationCommand( $op.text );
+				mips.operationCommand( $os.asoperator );
 			}
 		}	
 	|{$isTherePMoperator=0;$item=null;}
@@ -823,14 +832,23 @@ expr_other returns[ SymbolTableTemporaryVariableItem item , String name ]:
 			recordList.add( $ov.item );
 		})* '}'
 		{
-			if($or.item.getVariable().getType() instanceof ArrayType && !( $or.item.getVariable().getType() instanceof NoType ) && !inconsistencyFlag )
+			if( !( $or.item.getVariable().getType() instanceof NoType ) && !inconsistencyFlag )
 			{
+				if( $or.item.getVariable().getType() instanceof ArrayType )
+					( (ArrayType) $item.getVariable().getType() ).pushNewDimensionToFirst(dimen);
+				else
+				{
+					if( $or.item.getVariable().getType() instanceof IntType )
+						$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new IntArrayType() ) ,0 );
+					else
+						$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new CharArrayType() ) ,0 );
+					( (ArrayType) $item.getVariable().getType() ).pushNewDimensionToFirst( dimen );
+				}
 				$item.isLValue = 0;
-				mips.generateCodeForRecord( recordList );
-				( (ArrayType) $item.getVariable().getType() ).pushNewDimensionToFirst(dimen);
 			}
 			else
 				$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", NoType.getInstance() ) ,0 );
+			mips.generateCodeForRecord( recordList );
 		}
 	|	ow='read' '(' CONST_NUM ')'
 		{

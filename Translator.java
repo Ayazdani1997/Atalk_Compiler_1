@@ -373,8 +373,6 @@ public class Translator
         opHash.put( "-" , "sub" );
         opHash.put( "*" , "mul" );
         opHash.put( "/" , "div");
-        opHash.put( "<" , "slt");
-        opHash.put( ">" , "slt" );
         opHash.put( "and" , "and" );
         opHash.put( "or" , "or" );
         instructions.add("lw $a0, -4($fp)");
@@ -386,27 +384,24 @@ public class Translator
         instructions.add( opHash.get( s ) + " $a0, $a1, $a0");
     }
 
-    public void generateCodeForEquality( String operator , SymbolTableTemporaryVariableItem t1 , SymbolTableTemporaryVariableItem t2 )
+    public void generateCodeForEquality( String operator , SymbolTableTemporaryVariableItem t1 , int isLValue2 )
     {
-        Hashtable<String,String> opHash;
-        opHash.put( "==" , "xor" );
-        opHash.put( "<>" , "xor");
-        opHash.put( ">" , "slt" );
-        opHash.put( "<" , "slt" );
         int incValue1 = -4 , incValue2 = -4;
         if( t1.isLValue == 0 )
             incValue1 = 4;
-        if( t2.isLValue == 0 )
+        if( isLValue2 == 0 )
             incValue2 = 4;
         instructions.add( "lw $s3, -4($fp)");
         popStack();
         instructions.add( "lw $s2, -4($fp)" );
         instructions.add( "li $a1, 0" );
-        instructions.add( "li $a0, " + t1.getVariable().size() );
+        instructions.add( "li $a0, " + ( t1.getVariable().size() / Type.WORD_BYTES  ) );
         instructions.add( "LOOP" + labelNum + ": beq $a1, $a0, CONTINUE" + ( labelNum + 1 ) );
         instructions.add( "lw $s0, 0($s2)");
         instructions.add( "lw $s1, 0($s3)");
         instructions.add( "xor $s5, $s0, $s1" );
+        if( operator.equals( "==" ))
+            instructions.add( "xori $s5, $s5, 1" );
         instructions.add( "and $s4, $s4, $s5" );
         instructions.add( "addiu $a1, $a1, 1" );
         instructions.add( "addiu $s2, $s2, " + incValue1 );
@@ -609,6 +604,7 @@ public class Translator
         printNewLine();
     }
     public void generateWrite( Type type , int isLValue ){
+        System.out.println( "hello" );
     	instructions.add("#write started and its type is " + type.toString() );
     	if(type instanceof CharType){// it is assumed that head of stack is a \0 character
     		instructions.add("li $v0,11");
