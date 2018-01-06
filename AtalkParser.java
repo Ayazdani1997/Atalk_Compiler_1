@@ -104,12 +104,12 @@ public class AtalkParser extends Parser {
 		public void print(String n){
 			System.out.println(n);
 		}
-		public int startScopeWithSameBaseForEnteringReceiver( Register register , Register heapRegister )
+		public int startScopeWithSameBaseForEnteringReceiver( Register register )
 		{
 			int offset = SymbolTable.top.getOffset( register );
-			int argOffset = SymbolTable.top.getOffset( heapRegister );
+			//int argOffset = SymbolTable.top.getOffset( heapRegister );
 			SymbolTable.push( new SymbolTable(SymbolTable.top) );
-			SymbolTable.top.setOffset( heapRegister , argOffset );
+			//SymbolTable.top.setOffset( heapRegister , argOffset );
 			SymbolTable.top.setOffset( register , offset );
 			//print( "offset is " + offset );
 			return offset;
@@ -117,9 +117,10 @@ public class AtalkParser extends Parser {
 		public int startScopeWithSameBase( Register register )
 		{
 			int offset = SymbolTable.top.getOffset( register );
-			//int argOffset = SymbolTable.top.getOffset( heapRegister );
+			Register heapRegister = Register.TEMP9;
+			int argOffset = SymbolTable.top.getOffset( heapRegister );
 			SymbolTable.push( new SymbolTable(SymbolTable.top) );
-			//SymbolTable.top.setOffset( heapRegister , argOffset );
+			SymbolTable.top.setOffset( heapRegister , argOffset );
 			SymbolTable.top.setOffset( register , offset );
 			//print( "offset is " + offset );
 			return offset;	
@@ -312,7 +313,7 @@ public class AtalkParser extends Parser {
 			setState(81);
 			((ActorContext)_localctx).op = match(ID);
 
-						int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP , Register.TEMP9 );
+						int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP );
 						((ActorContext)_localctx).actorline = (((ActorContext)_localctx).op!=null?((ActorContext)_localctx).op.getLine():0);
 					
 
@@ -466,7 +467,7 @@ public class AtalkParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 
-						int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP , Register.TEMP9 );
+						int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP );
 						///int offset = SymbolTable.top.getOffset( Register.GP );
 						//SymbolTable.push(new SymbolTable(SymbolTable.top));
 					

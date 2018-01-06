@@ -245,7 +245,7 @@ public class Atalk_p2Parser extends Parser {
 			setState(82);
 			((ActorContext)_localctx).CONST_NUM = match(CONST_NUM);
 
-						//mips.addActor( (((ActorContext)_localctx).ID!=null?((ActorContext)_localctx).ID.getText():null) , (((ActorContext)_localctx).CONST_NUM!=null?Integer.valueOf(((ActorContext)_localctx).CONST_NUM.getText()):0) );
+						mips.addActor( (((ActorContext)_localctx).ID!=null?((ActorContext)_localctx).ID.getText():null) , (((ActorContext)_localctx).CONST_NUM!=null?Integer.valueOf(((ActorContext)_localctx).CONST_NUM.getText()):0) );
 					
 			setState(84);
 			match(T__2);
@@ -366,8 +366,10 @@ public class Atalk_p2Parser extends Parser {
 			setState(100);
 			((ReceiverContext)_localctx).op = match(ID);
 
-
-						//mips.addReceiver( (((ReceiverContext)_localctx).op!=null?((ReceiverContext)_localctx).op.getText():null) );
+						String actorName=((ActorSymbolTableItem)SymbolTable.top.pre.pre.get(SymbolTable.top.pre.getkeyOfActorAccordingToActorST())).getName();
+						String receiverKey=SymbolTable.top.getkeyOfReceiverAccordingToReceiverST();
+						Translator.mips.addReceiver(actorName,receiverKey,SymbolTable.top.isInitReceiverScope);
+						Translator.mips.generateReceiverStub( (((ReceiverContext)_localctx).op!=null?((ReceiverContext)_localctx).op.getText():null) ,receiverKey);
 					
 			setState(102);
 			match(T__5);
@@ -414,7 +416,7 @@ public class Atalk_p2Parser extends Parser {
 			setState(122);
 			match(NL);
 
-						//mips.addReceiverSkeleton();
+						mips.addReceiverSkeleton();
 						SymbolTable.pop();
 					
 			}

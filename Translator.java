@@ -28,7 +28,7 @@ public class Translator
 	    labelNum=0;
         initedActorsCount = 0;
         receiverNum=0;
-        stackstart = 0x7ffff148;
+        stackstart = 0x7ffff7f8;
         heapstart  = 0x10011111;
         actorSegmentStart= 0x11011111;
         dataSegmentStart= 0x00001000;
@@ -127,9 +127,11 @@ public class Translator
         //this.addSystemCall(10);
         try {
             PrintWriter writer = new PrintWriter(output);
-            //writer.println("invalidmsgmsg : "+".asciiz \"InvalidMessageError\"");
-            //writer.println("actorMBfullmsg : "+".asciiz \"ActorBufferOverflowError\"");
-            //writer.println( "indexOutOfRange : " + " .asciiz \"indexOutOfRangeException\"" );
+            writer.println( ".data" );
+            writer.println("invalidmsgmsg : "+".asciiz \"InvalidMessageError\"");
+            writer.println("actorMBfullmsg : "+".asciiz \"ActorBufferOverflowError\"");
+            writer.println( "indexOutOfRange : " + " .asciiz \"indexOutOfRangeException\"" );
+            writer.println( ".text" );
             writer.println("main:");
             writer.println( "li $sp, " + stackstart );
             writer.println( "li $t6, " + rvalueStackStart);

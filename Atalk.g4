@@ -3,12 +3,12 @@ grammar Atalk;
 	public void print(String n){
 		System.out.println(n);
 	}
-	public int startScopeWithSameBaseForEnteringReceiver( Register register , Register heapRegister )
+	public int startScopeWithSameBaseForEnteringReceiver( Register register )
 	{
 		int offset = SymbolTable.top.getOffset( register );
-		int argOffset = SymbolTable.top.getOffset( heapRegister );
+		//int argOffset = SymbolTable.top.getOffset( heapRegister );
 		SymbolTable.push( new SymbolTable(SymbolTable.top) );
-		SymbolTable.top.setOffset( heapRegister , argOffset );
+		//SymbolTable.top.setOffset( heapRegister , argOffset );
 		SymbolTable.top.setOffset( register , offset );
 		//print( "offset is " + offset );
 		return offset;
@@ -16,9 +16,10 @@ grammar Atalk;
 	public int startScopeWithSameBase( Register register )
 	{
 		int offset = SymbolTable.top.getOffset( register );
-		//int argOffset = SymbolTable.top.getOffset( heapRegister );
+		Register heapRegister = Register.TEMP9;
+		int argOffset = SymbolTable.top.getOffset( heapRegister );
 		SymbolTable.push( new SymbolTable(SymbolTable.top) );
-		//SymbolTable.top.setOffset( heapRegister , argOffset );
+		SymbolTable.top.setOffset( heapRegister , argOffset );
 		SymbolTable.top.setOffset( register , offset );
 		//print( "offset is " + offset );
 		return offset;	
@@ -88,7 +89,7 @@ program locals[int lastRepeatedVarNum , Stack <String> foreachCursor , Stack <St
 actor returns[ActorSymbolTableItem asti] locals[int actorline]:
 		'actor' op=ID 
 		{
-			int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP , Register.TEMP9 );
+			int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP );
 			$actorline=$op.line;
 		}
 		{
@@ -138,7 +139,7 @@ actor returns[ActorSymbolTableItem asti] locals[int actorline]:
 
 receiver returns[ReceiverSymbolTableItem rsti] locals[int receiverline]:
 		{
-			int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP , Register.TEMP9 );
+			int offset = startScopeWithSameBaseForEnteringReceiver( Register.GP );
 			///int offset = SymbolTable.top.getOffset( Register.GP );
 			//SymbolTable.push(new SymbolTable(SymbolTable.top));
 		}

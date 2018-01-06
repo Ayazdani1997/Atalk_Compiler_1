@@ -90,12 +90,12 @@ public class AtalkLexer extends Lexer {
 		public void print(String n){
 			System.out.println(n);
 		}
-		public int startScopeWithSameBaseForEnteringReceiver( Register register , Register heapRegister )
+		public int startScopeWithSameBaseForEnteringReceiver( Register register )
 		{
 			int offset = SymbolTable.top.getOffset( register );
-			int argOffset = SymbolTable.top.getOffset( heapRegister );
+			//int argOffset = SymbolTable.top.getOffset( heapRegister );
 			SymbolTable.push( new SymbolTable(SymbolTable.top) );
-			SymbolTable.top.setOffset( heapRegister , argOffset );
+			//SymbolTable.top.setOffset( heapRegister , argOffset );
 			SymbolTable.top.setOffset( register , offset );
 			//print( "offset is " + offset );
 			return offset;
@@ -103,9 +103,10 @@ public class AtalkLexer extends Lexer {
 		public int startScopeWithSameBase( Register register )
 		{
 			int offset = SymbolTable.top.getOffset( register );
-			//int argOffset = SymbolTable.top.getOffset( heapRegister );
+			Register heapRegister = Register.TEMP9;
+			int argOffset = SymbolTable.top.getOffset( heapRegister );
 			SymbolTable.push( new SymbolTable(SymbolTable.top) );
-			//SymbolTable.top.setOffset( heapRegister , argOffset );
+			SymbolTable.top.setOffset( heapRegister , argOffset );
 			SymbolTable.top.setOffset( register , offset );
 			//print( "offset is " + offset );
 			return offset;	

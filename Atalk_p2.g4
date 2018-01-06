@@ -25,7 +25,7 @@ actor:
 		} 
 		'<' CONST_NUM
 		{
-			//mips.addActor( $ID.text , $CONST_NUM.int );
+			mips.addActor( $ID.text , $CONST_NUM.int );
 		}
 		'>' NL
 		(state | 
@@ -43,14 +43,16 @@ receiver :
 		}
 		'receiver' op=ID
 		{
-
-			//mips.addReceiver( $op.text );
+			String actorName=((ActorSymbolTableItem)SymbolTable.top.pre.pre.get(SymbolTable.top.pre.getkeyOfActorAccordingToActorST())).getName();
+			String receiverKey=SymbolTable.top.getkeyOfReceiverAccordingToReceiverST();
+			Translator.mips.addReceiver(actorName,receiverKey,SymbolTable.top.isInitReceiverScope);
+			Translator.mips.generateReceiverStub( $op.text ,receiverKey);
 		}
 		'(' (os=type ot=ID {SymbolTable.define();}(',' ou=type ow=ID {SymbolTable.define();})*)? ')' NL
 		statements
 		'end' NL
 		{
-			//mips.addReceiverSkeleton();
+			mips.addReceiverSkeleton();
 			SymbolTable.pop();
 		}
 	;

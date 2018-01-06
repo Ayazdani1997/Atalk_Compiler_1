@@ -1,12 +1,36 @@
+.data
+invalidmsgmsg : .asciiz "InvalidMessageError"
+actorMBfullmsg : .asciiz "ActorBufferOverflowError"
+indexOutOfRange :  .asciiz "indexOutOfRangeException"
+.text
 main:
-li $sp, 2147479880
+li $sp, 2147481592
 li $t6, 2147483644
 li $t1, 285282577
 li $t2, 268505361
 li $t9, 268443648
 li $gp, 4096
-li $t8 , 0
+li $t8 , 1
 move $fp, $sp
+# adding an actor
+li $a0, 4
+sw $a0, 0($t1)
+move $t3,$t1
+addi $t3,$t3, 12
+sw $t3, 4($t1)
+move $t3,$t1
+addi $t3,$t3, 28
+sw $t3, 8($t1)
+#actor added
+#putting init message in actor sadramailbox
+li $t3, 0
+add $t3 ,$t3,$t1
+sw $zero , 20($t3)
+li $t5, 0
+sw $t5 , 24($t3)
+#init message put
+j superwhile
+init0:
 addiu $fp, $sp, 48 #variable a declaration
 addiu $a0, $fp, -4
 sw $a0, 0($fp)
@@ -1535,4 +1559,51 @@ syscall
 # pop stack
 addiu $fp, $fp, -4
 # end of pop stack
+jr $ra
+#receiver added
+#start of superwhile
+superwhile :
+beq $t8,$zero, programcomplete
+li $a1, 5
+li $a0, 0
+add $a0,$a0,$t1
+jal messagepicker
+j superwhile
+#end of superwhile
+#start of messagepicker
+messagepicker:
+lw $t3, 0($a0)
+bne $a1,$t3, hasmessage54
+jr $ra
+hasmessage54 :
+lw $a2, 0($a0)
+addi $a2,$a2,1
+sw $a2, 0($a0)
+addiu $t8,$t8,-1
+lw $a2, 4($a0)
+lw $a3, 4($a0)
+addi $a3,$a3,16
+li $t3,16
+multu $t3,$a1
+mflo $t3
+add $t3,$t3,$a0
+addi $t3,$t3,12
+beq $a3,$t3, pointermending55
+sw $a3,4($a0)
+j pointermended56
+pointermending55 :
+addi $a3,$a0,12
+sw $a3,4($a0)
+pointermended56 :
+addi $t3,$a2,12
+lw $t3, 0($t3)
+li $t5, 0
+add $t5,$t5,$t1
+bne $t5,$a0, not57sadra
+li $t7, 0
+beq $t7,$t3 , init0
+not57sadra:
+#end of messagepicker
 programcomplete:
+li $v0, 10
+syscall
