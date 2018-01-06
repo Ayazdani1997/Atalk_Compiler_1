@@ -1,0 +1,5 @@
+actor sadra<5>
+	receiver init()
+		write( read( 5 ) )
+	end
+end

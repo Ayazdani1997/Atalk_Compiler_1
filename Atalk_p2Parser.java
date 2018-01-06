@@ -104,15 +104,7 @@ public class Atalk_p2Parser extends Parser {
 		public void print(String n){
 			System.out.println(n);
 		}
-		Translator mips  = new Translator();
-		/*public boolean sizeConsistency( ArrayType t1 , ArrayType t2 )
-		{
-			if( t1.DimensionsCount() != t2.DimensionsCount() )
-				return false;
-			int size = t1.DimensionsCount();
-			for( int i = 0 ; i < size ; i++ )
-				if( t1.)
-		}*/
+		Translator mips  = Translator.mips;
 
 	public Atalk_p2Parser(TokenStream input) {
 		super(input);
@@ -507,6 +499,8 @@ public class Atalk_p2Parser extends Parser {
 	}
 
 	public static class TypeContext extends ParserRuleContext {
+		public Type vartype;
+		public Token CONST_NUM;
 		public List<TerminalNode> CONST_NUM() { return getTokens(Atalk_p2Parser.CONST_NUM); }
 		public TerminalNode CONST_NUM(int i) {
 			return getToken(Atalk_p2Parser.CONST_NUM, i);
@@ -530,7 +524,7 @@ public class Atalk_p2Parser extends Parser {
 		enterRule(_localctx, 8, RULE_type);
 		int _la;
 		try {
-			setState(154);
+			setState(160);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__8:
@@ -538,49 +532,71 @@ public class Atalk_p2Parser extends Parser {
 				{
 				setState(136);
 				match(T__8);
-				setState(142);
+
+							((TypeContext)_localctx).vartype = CharArrayType.getInstance();
+						
+				setState(144);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==T__9) {
 					{
 					{
-					setState(137);
-					match(T__9);
 					setState(138);
-					match(CONST_NUM);
+					match(T__9);
 					setState(139);
+					((TypeContext)_localctx).CONST_NUM = match(CONST_NUM);
+					setState(140);
 					match(T__10);
+
+								if((((TypeContext)_localctx).CONST_NUM!=null?Integer.valueOf(((TypeContext)_localctx).CONST_NUM.getText()):0)>0) 
+									((CharArrayType) _localctx.vartype ).pushNewDimension((((TypeContext)_localctx).CONST_NUM!=null?Integer.valueOf(((TypeContext)_localctx).CONST_NUM.getText()):0));
+							
 					}
 					}
-					setState(144);
+					setState(146);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
+
+							if(( (CharArrayType) _localctx.vartype).DimensionsCount()==0) 
+								((TypeContext)_localctx).vartype = CharType.getInstance();
+						
 				}
 				break;
 			case T__11:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(145);
+				setState(148);
 				match(T__11);
-				setState(151);
+
+							((TypeContext)_localctx).vartype = IntArrayType.getInstance();
+						
+				setState(156);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==T__9) {
 					{
 					{
-					setState(146);
+					setState(150);
 					match(T__9);
-					setState(147);
-					match(CONST_NUM);
-					setState(148);
+					setState(151);
+					((TypeContext)_localctx).CONST_NUM = match(CONST_NUM);
+					setState(152);
 					match(T__10);
+
+								if((((TypeContext)_localctx).CONST_NUM!=null?Integer.valueOf(((TypeContext)_localctx).CONST_NUM.getText()):0)>0) 
+									((IntArrayType) _localctx.vartype ).pushNewDimension((((TypeContext)_localctx).CONST_NUM!=null?Integer.valueOf(((TypeContext)_localctx).CONST_NUM.getText()):0));
+							
 					}
 					}
-					setState(153);
+					setState(158);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
+
+							if(((IntArrayType)_localctx.vartype).DimensionsCount()==0) 
+								((TypeContext)_localctx).vartype =  IntType.getInstance();
+						
 				}
 				break;
 			default:
@@ -627,17 +643,23 @@ public class Atalk_p2Parser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 
+						int SPoffset=SymbolTable.top.getOffset(Register.SP);
 						SymbolTable.push();
+						if(SymbolTable.top.getInForeachST())
+						{
+							SymbolTable.top.clearItems();
+							SymbolTable.top.setOffset(Register.SP,SPoffset);
+						}
 					
-			setState(157);
+			setState(163);
 			match(T__12);
-			setState(158);
+			setState(164);
 			match(NL);
-			setState(159);
+			setState(165);
 			statements();
-			setState(160);
+			setState(166);
 			match(T__3);
-			setState(161);
+			setState(167);
 			match(NL);
 
 						SymbolTable.pop();
@@ -697,63 +719,73 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(164);
+			setState(170);
 			((Stm_if_elseif_elseContext)_localctx).op = match(T__13);
-			setState(165);
+			setState(171);
 			((Stm_if_elseif_elseContext)_localctx).os = expr();
 
-						SymbolTable.push();			
+						int SPoffset=SymbolTable.top.getOffset(Register.SP);
+						SymbolTable.push();	
+						if(SymbolTable.top.getInForeachST())
+						{
+							SymbolTable.top.clearItems();
+							SymbolTable.top.setOffset(Register.SP,SPoffset);
+						}
+						int falseIfLabelNum=Translator.mips.generate_if_stub(((Stm_if_elseif_elseContext)_localctx).os.item);		
 					
-			setState(167);
+			setState(173);
 			match(NL);
-			setState(168);
+			setState(174);
 			statements();
 			 
+						int endIfLabelNum=Translator.mips.generate_if_skeleton(falseIfLabelNum);
 						SymbolTable.pop();	
 						if(!( ((Stm_if_elseif_elseContext)_localctx).os.item.getVariable().getType() instanceof IntType || ((Stm_if_elseif_elseContext)_localctx).os.item.getVariable().getType() instanceof NoType ) )
 							print("Error in line "+(((Stm_if_elseif_elseContext)_localctx).op!=null?((Stm_if_elseif_elseContext)_localctx).op.getLine():0)+" if expression must be integer");
 					
-			setState(179);
+			setState(185);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while (_la==T__14) {
 				{
 				{
-				setState(170);
+				setState(176);
 				((Stm_if_elseif_elseContext)_localctx).opp = match(T__14);
-				setState(171);
+				setState(177);
 				((Stm_if_elseif_elseContext)_localctx).ou = expr();
 
 								SymbolTable.push();
 								if(!( ((Stm_if_elseif_elseContext)_localctx).os.item.getVariable().getType() instanceof IntType || ((Stm_if_elseif_elseContext)_localctx).os.item.getVariable().getType() instanceof NoType ) )
 									print("Error in line "+(((Stm_if_elseif_elseContext)_localctx).opp!=null?((Stm_if_elseif_elseContext)_localctx).opp.getLine():0)+" if expression must be integer");
+								int falseElifLabelNum=Translator.mips.generate_elif_stub(((Stm_if_elseif_elseContext)_localctx).ou.item);
 							
-				setState(173);
+				setState(179);
 				match(NL);
-				setState(174);
+				setState(180);
 				statements();
 
+								Translator.mips.generate_elif_skeleton(falseElifLabelNum,endIfLabelNum);
 								SymbolTable.pop();
 							
 				}
 				}
-				setState(181);
+				setState(187);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(188);
+			setState(194);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==T__15) {
 				{
-				setState(182);
+				setState(188);
 				match(T__15);
-				setState(183);
+				setState(189);
 				match(NL);
 
 								SymbolTable.push();		
 							
-				setState(185);
+				setState(191);
 				statements();
 
 								SymbolTable.pop();	
@@ -761,9 +793,12 @@ public class Atalk_p2Parser extends Parser {
 				}
 			}
 
-			setState(190);
+
+						Translator.mips.generate_endif(endIfLabelNum);
+					
+			setState(197);
 			match(T__3);
-			setState(191);
+			setState(198);
 			match(NL);
 			}
 		}
@@ -812,16 +847,23 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(193);
+			setState(200);
 			match(T__16);
 
-						SymbolTable.push();			
+						boolean isOutterMostForeach=!SymbolTable.top.getInForeachST();
+						int SPoffset=SymbolTable.top.getOffset(Register.SP);
+						SymbolTable.push();
+						if(isOutterMostForeach)
+							SymbolTable.top.setOffset(Register.SP,SymbolTable.top.getStackOffsetBeforeForeachST());
+						else
+							SymbolTable.top.setOffset(Register.SP,SPoffset);
+						SymbolTable.top.clearItems();
 					
-			setState(195);
+			setState(202);
 			((Stm_foreachContext)_localctx).op = match(ID);
-			setState(196);
+			setState(203);
 			match(T__17);
-			setState(197);
+			setState(204);
 			((Stm_foreachContext)_localctx).os = expr();
 
 						SymbolTableCursorItem cursorItem;
@@ -862,17 +904,20 @@ public class Atalk_p2Parser extends Parser {
 							}
 							catch( ItemAlreadyExistsException ex ) {}
 						}
+						cursorItem.elementOffset=offset;
+						Translator.mips.generate_foreach_stub(cursorItem,((Stm_foreachContext)_localctx).os.item);
 					
-			setState(199);
+			setState(206);
 			match(NL);
-			setState(200);
+			setState(207);
 			statements();
-			setState(201);
+			setState(208);
 			match(T__3);
 			 
+						Translator.mips.generate_foreach_skeleton(cursorItem,((Stm_foreachContext)_localctx).os.item);
 						SymbolTable.pop();
 					
-			setState(203);
+			setState(210);
 			match(NL);
 			}
 		}
@@ -919,12 +964,12 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(209);
+			setState(216);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__5) | (1L << T__8) | (1L << T__11) | (1L << T__12) | (1L << T__13) | (1L << T__16) | (1L << T__19) | (1L << T__20) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__30) | (1L << T__33) | (1L << T__34) | (1L << T__36) | (1L << CONST_NUM) | (1L << CONST_CHAR) | (1L << CONST_STR) | (1L << NL) | (1L << ID))) != 0)) {
 				{
-				setState(207);
+				setState(214);
 				_errHandler.sync(this);
 				switch (_input.LA(1)) {
 				case T__5:
@@ -947,13 +992,13 @@ public class Atalk_p2Parser extends Parser {
 				case CONST_STR:
 				case ID:
 					{
-					setState(205);
+					setState(212);
 					statement();
 					}
 					break;
 				case NL:
 					{
-					setState(206);
+					setState(213);
 					match(NL);
 					}
 					break;
@@ -961,7 +1006,7 @@ public class Atalk_p2Parser extends Parser {
 					throw new NoViableAltException(this);
 				}
 				}
-				setState(211);
+				setState(218);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
@@ -1025,20 +1070,20 @@ public class Atalk_p2Parser extends Parser {
 		StatementContext _localctx = new StatementContext(_ctx, getState());
 		enterRule(_localctx, 18, RULE_statement);
 		try {
-			setState(223);
+			setState(230);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,14,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(212);
+				setState(219);
 				stm_vardef();
 				}
 				break;
 			case 2:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(213);
+				setState(220);
 				((StatementContext)_localctx).op = stm_assignment();
 
 						if( ! ((StatementContext)_localctx).op.isStatement )
@@ -1049,49 +1094,49 @@ public class Atalk_p2Parser extends Parser {
 			case 3:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(216);
+				setState(223);
 				stm_foreach();
 				}
 				break;
 			case 4:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(217);
+				setState(224);
 				stm_if_elseif_else();
 				}
 				break;
 			case 5:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(218);
+				setState(225);
 				stm_quit();
 				}
 				break;
 			case 6:
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(219);
+				setState(226);
 				stm_break();
 				}
 				break;
 			case 7:
 				enterOuterAlt(_localctx, 7);
 				{
-				setState(220);
+				setState(227);
 				stm_tell();
 				}
 				break;
 			case 8:
 				enterOuterAlt(_localctx, 8);
 				{
-				setState(221);
+				setState(228);
 				stm_write();
 				}
 				break;
 			case 9:
 				enterOuterAlt(_localctx, 9);
 				{
-				setState(222);
+				setState(229);
 				block();
 				}
 				break;
@@ -1109,14 +1154,15 @@ public class Atalk_p2Parser extends Parser {
 	}
 
 	public static class Stm_vardefContext extends ParserRuleContext {
+		public TypeContext oh;
 		public Token os;
 		public ExprContext om;
 		public Token ot;
 		public ExprContext on;
+		public TerminalNode NL() { return getToken(Atalk_p2Parser.NL, 0); }
 		public TypeContext type() {
 			return getRuleContext(TypeContext.class,0);
 		}
-		public TerminalNode NL() { return getToken(Atalk_p2Parser.NL, 0); }
 		public List<TerminalNode> ID() { return getTokens(Atalk_p2Parser.ID); }
 		public TerminalNode ID(int i) {
 			return getToken(Atalk_p2Parser.ID, i);
@@ -1148,18 +1194,26 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(225);
-			type();
-			setState(226);
+			setState(232);
+			((Stm_vardefContext)_localctx).oh = type();
+			setState(233);
 			((Stm_vardefContext)_localctx).os = match(ID);
 
 						String name;
 						SymbolTableLocalVariableItem item;
 						name =  (((Stm_vardefContext)_localctx).os!=null?((Stm_vardefContext)_localctx).os.getText():null);
+						if(SymbolTable.top.getInForeachST())
+						{
+							try
+							{
+								SymbolTable.top.put(new SymbolTableLocalVariableItem(new Variable(name,((Stm_vardefContext)_localctx).oh.vartype),SymbolTable.top.getOffset(Register.SP)));
+							}
+							catch( ItemAlreadyExistsException e ) {}
+						}
 						item = ( SymbolTableLocalVariableItem ) SymbolTable.top.getInCurrentScope( name );
 						mips.addCode( "addiu $fp, $sp, " + ( item.getOffset() + item.getVariable().size() ) + " #variable " + name + " declaration"  );
 					
-			setState(233);
+			setState(240);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if (_la==T__18) {
@@ -1169,9 +1223,9 @@ public class Atalk_p2Parser extends Parser {
 							mips.addCode( "sw $a0, 0($fp)");
 							mips.addCode( "addiu $fp, $fp, 4" );
 						
-				setState(229);
+				setState(236);
 				match(T__18);
-				setState(230);
+				setState(237);
 				((Stm_vardefContext)_localctx).om = expr();
 
 							if( !( ((Stm_vardefContext)_localctx).om.item.getVariable().getType().equals( item.getVariable().getType() ) ) && !( ((Stm_vardefContext)_localctx).om.item.getVariable().getType() instanceof NoType ) )
@@ -1182,22 +1236,30 @@ public class Atalk_p2Parser extends Parser {
 			}
 
 			 SymbolTable.define(); 
-			setState(249);
+			setState(256);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			while (_la==T__6) {
 				{
 				{
-				setState(236);
+				setState(243);
 				match(T__6);
-				setState(237);
+				setState(244);
 				((Stm_vardefContext)_localctx).ot = match(ID);
 
 							name = (((Stm_vardefContext)_localctx).ot!=null?((Stm_vardefContext)_localctx).ot.getText():null);
+							if(SymbolTable.top.getInForeachST())
+							{
+								try
+								{
+									SymbolTable.top.put(new SymbolTableLocalVariableItem(new Variable(name,((Stm_vardefContext)_localctx).oh.vartype),SymbolTable.top.getOffset(Register.SP)));
+								}
+								catch( ItemAlreadyExistsException e ) {}
+							}
 							item = ( SymbolTableLocalVariableItem ) SymbolTable.top.getInCurrentScope( name );
 							mips.addCode( "addiu $fp, $sp, " + ( item.getOffset() + item.getVariable().size() ) + " #variable " + name + " declaration"  );
 						
-				setState(244);
+				setState(251);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				if (_la==T__18) {
@@ -1207,9 +1269,9 @@ public class Atalk_p2Parser extends Parser {
 									mips.addCode( "sw $a0, 0($fp)");
 									mips.addCode( "addiu $fp, $fp, 4" );
 								
-					setState(240);
+					setState(247);
 					match(T__18);
-					setState(241);
+					setState(248);
 					((Stm_vardefContext)_localctx).on = expr();
 
 								if( !( ((Stm_vardefContext)_localctx).on.item.getVariable().getType().equals( item.getVariable().getType() ) ) && !( ((Stm_vardefContext)_localctx).on.item.getVariable().getType() instanceof NoType ) )
@@ -1222,11 +1284,11 @@ public class Atalk_p2Parser extends Parser {
 				SymbolTable.define();
 				}
 				}
-				setState(251);
+				setState(258);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 			}
-			setState(252);
+			setState(259);
 			match(NL);
 			}
 		}
@@ -1279,26 +1341,26 @@ public class Atalk_p2Parser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			int destination;
-			setState(261);
+			setState(268);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case ID:
 				{
-				setState(255);
+				setState(262);
 				((Stm_tellContext)_localctx).ot = match(ID);
 				destination=1;
 				}
 				break;
 			case T__19:
 				{
-				setState(257);
+				setState(264);
 				match(T__19);
 				destination=2;
 				}
 				break;
 			case T__20:
 				{
-				setState(259);
+				setState(266);
 				match(T__20);
 				destination=3;
 				}
@@ -1306,44 +1368,48 @@ public class Atalk_p2Parser extends Parser {
 			default:
 				throw new NoViableAltException(this);
 			}
-			setState(263);
+			setState(270);
 			match(T__21);
-			setState(264);
+			setState(271);
 			((Stm_tellContext)_localctx).op = match(ID);
-			setState(265);
+			setState(272);
 			match(T__5);
 
 					ArrayList<SymbolTableTemporaryVariableItem> arguments=new ArrayList<>();	
 				
-			setState(278);
+			setState(285);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__5) | (1L << T__30) | (1L << T__33) | (1L << T__34) | (1L << T__36) | (1L << CONST_NUM) | (1L << CONST_CHAR) | (1L << CONST_STR) | (1L << ID))) != 0)) {
 				{
-				setState(267);
+				setState(274);
 				((Stm_tellContext)_localctx).om = expr();
-				arguments.add(((Stm_tellContext)_localctx).om.item);
-				setState(275);
+
+					 	arguments.add(((Stm_tellContext)_localctx).om.item);
+					 
+				setState(282);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==T__6) {
 					{
 					{
-					setState(269);
+					setState(276);
 					match(T__6);
-					setState(270);
-					((Stm_tellContext)_localctx).oj = expr();
-					arguments.add(((Stm_tellContext)_localctx).oj.item);
-					}
-					}
 					setState(277);
+					((Stm_tellContext)_localctx).oj = expr();
+
+						 		arguments.add(((Stm_tellContext)_localctx).oj.item);
+						 	
+					}
+					}
+					setState(284);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
 				}
 			}
 
-			setState(280);
+			setState(287);
 			match(T__7);
 
 					if(destination==1)
@@ -1359,6 +1425,14 @@ public class Atalk_p2Parser extends Parser {
 							ReceiverSymbolTableItem recItem=(ReceiverSymbolTableItem)item.getAccordingST().getInCurrentScope(key);
 							if(recItem==null)
 								print("Error in line "+(((Stm_tellContext)_localctx).op!=null?((Stm_tellContext)_localctx).op.getLine():0)+" there is not such receiver in actor '"+(((Stm_tellContext)_localctx).ot!=null?((Stm_tellContext)_localctx).ot.getText():null)+"'");
+							else{
+								SymbolTable toBeActorST=SymbolTable.top;
+								while(toBeActorST.pre.pre!=null)
+									toBeActorST=toBeActorST.pre;
+								String ActorName=((ActorSymbolTableItem)toBeActorST.pre.get(toBeActorST.getkeyOfActorAccordingToActorST())).getName();
+								Translator.mips.addReceiverCall(ActorName,(((Stm_tellContext)_localctx).ot!=null?((Stm_tellContext)_localctx).ot.getText():null),key,arguments);
+							}
+						
 						}
 					}
 					else if(destination==3){
@@ -1375,13 +1449,14 @@ public class Atalk_p2Parser extends Parser {
 						ReceiverSymbolTableItem recItem=(ReceiverSymbolTableItem)temp.getInCurrentScope(key);
 						if(recItem==null)
 							print("Error in line "+(((Stm_tellContext)_localctx).op!=null?((Stm_tellContext)_localctx).op.getLine():0)+" there is not such receiver in actor '"+item.getName()+"'");
+						Translator.mips.addReceiverCall(item.getName(),item.getName(),key,arguments);
 					}
 					else if(destination==2){
 						if(SymbolTable.top.isInitReceiverScope)
 							print("Error in line "+(((Stm_tellContext)_localctx).op!=null?((Stm_tellContext)_localctx).op.getLine():0)+" sender could not be used in init() receiver");
 					}
 				
-			setState(282);
+			setState(289);
 			match(NL);
 			}
 		}
@@ -1423,11 +1498,11 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(284);
+			setState(291);
 			((Stm_writeContext)_localctx).op = match(T__22);
-			setState(285);
+			setState(292);
 			match(T__5);
-			setState(286);
+			setState(293);
 			((Stm_writeContext)_localctx).os = expr();
 
 						if(((Stm_writeContext)_localctx).os.item.getVariable().getType() instanceof ArrayType){
@@ -1438,9 +1513,9 @@ public class Atalk_p2Parser extends Parser {
 						}
 						mips.generateWrite( ((Stm_writeContext)_localctx).os.item.getVariable().getType() , ((Stm_writeContext)_localctx).os.item.isLValue );
 					
-			setState(288);
+			setState(295);
 			match(T__7);
-			setState(289);
+			setState(296);
 			match(NL);
 			}
 		}
@@ -1478,9 +1553,12 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(291);
+			setState(298);
 			((Stm_quitContext)_localctx).op = match(T__23);
-			setState(292);
+
+						mips.generateQuit();
+					
+			setState(300);
 			match(NL);
 			}
 		}
@@ -1518,9 +1596,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(294);
+			setState(302);
 			((Stm_breakContext)_localctx).op = match(T__24);
-			setState(295);
+			setState(303);
 			match(NL);
 			}
 		}
@@ -1563,9 +1641,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(297);
+			setState(305);
 			((Stm_assignmentContext)_localctx).op = expr();
-			setState(298);
+			setState(306);
 			match(NL);
 
 						((Stm_assignmentContext)_localctx).isStatement =  ((Stm_assignmentContext)_localctx).op.isStatement;
@@ -1614,7 +1692,7 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(301);
+			setState(309);
 			((ExprContext)_localctx).op = expr_assign();
 
 						((ExprContext)_localctx).couldBeAssigned = ((ExprContext)_localctx).op.syn_couldBeAssigned;
@@ -1668,18 +1746,18 @@ public class Atalk_p2Parser extends Parser {
 		Expr_assignContext _localctx = new Expr_assignContext(_ctx, getState());
 		enterRule(_localctx, 34, RULE_expr_assign);
 		try {
-			setState(314);
+			setState(322);
 			_errHandler.sync(this);
 			switch ( getInterpreter().adaptivePredict(_input,21,_ctx) ) {
 			case 1:
 				enterOuterAlt(_localctx, 1);
 				{
 				((Expr_assignContext)_localctx).couldBeAssigned = 1;
-				setState(305);
+				setState(313);
 				((Expr_assignContext)_localctx).os = expr_or();
-				setState(306);
+				setState(314);
 				((Expr_assignContext)_localctx).op = match(T__18);
-				setState(307);
+				setState(315);
 				((Expr_assignContext)_localctx).ou = expr_assign();
 
 							((Expr_assignContext)_localctx).isStatement =  true;
@@ -1708,7 +1786,7 @@ public class Atalk_p2Parser extends Parser {
 				enterOuterAlt(_localctx, 2);
 				{
 				((Expr_assignContext)_localctx).couldBeAssigned = 1;
-				setState(311);
+				setState(319);
 				((Expr_assignContext)_localctx).on = expr_or();
 
 							((Expr_assignContext)_localctx).item = ((Expr_assignContext)_localctx).on.item;
@@ -1760,9 +1838,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(316);
+			setState(324);
 			((Expr_orContext)_localctx).ou = expr_and();
-			setState(317);
+			setState(325);
 			((Expr_orContext)_localctx).os = expr_or_tmp();
 
 						if(((Expr_orContext)_localctx).os.isThereORoperator==0)
@@ -1824,18 +1902,18 @@ public class Atalk_p2Parser extends Parser {
 		Expr_or_tmpContext _localctx = new Expr_or_tmpContext(_ctx, getState());
 		enterRule(_localctx, 38, RULE_expr_or_tmp);
 		try {
-			setState(327);
+			setState(335);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__25:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(320);
+				setState(328);
 				((Expr_or_tmpContext)_localctx).op = match(T__25);
 				((Expr_or_tmpContext)_localctx).isThereORoperator = 1;((Expr_assignContext)getInvokingContext(17)).couldBeAssigned = 0; ((Expr_or_tmpContext)_localctx).orLine =  (((Expr_or_tmpContext)_localctx).op!=null?((Expr_or_tmpContext)_localctx).op.getLine():0); 
-				setState(322);
+				setState(330);
 				((Expr_or_tmpContext)_localctx).ou = expr_and();
-				setState(323);
+				setState(331);
 				((Expr_or_tmpContext)_localctx).os = expr_or_tmp();
 
 							if(((Expr_or_tmpContext)_localctx).os.isThereORoperator==0)
@@ -1911,9 +1989,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(329);
+			setState(337);
 			((Expr_andContext)_localctx).ou = expr_eq();
-			setState(330);
+			setState(338);
 			((Expr_andContext)_localctx).os = expr_and_tmp();
 
 						if(((Expr_andContext)_localctx).os.isThereANDoperator==0)
@@ -1975,18 +2053,18 @@ public class Atalk_p2Parser extends Parser {
 		Expr_and_tmpContext _localctx = new Expr_and_tmpContext(_ctx, getState());
 		enterRule(_localctx, 42, RULE_expr_and_tmp);
 		try {
-			setState(340);
+			setState(348);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__26:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(333);
+				setState(341);
 				((Expr_and_tmpContext)_localctx).op = match(T__26);
 				((Expr_and_tmpContext)_localctx).isThereANDoperator = 1;((Expr_assignContext)getInvokingContext(17)).couldBeAssigned = 0; ((Expr_and_tmpContext)_localctx).andLine =  (((Expr_and_tmpContext)_localctx).op!=null?((Expr_and_tmpContext)_localctx).op.getLine():0) ;
-				setState(335);
+				setState(343);
 				((Expr_and_tmpContext)_localctx).ou = expr_eq();
-				setState(336);
+				setState(344);
 				((Expr_and_tmpContext)_localctx).os = expr_and_tmp();
 
 							if(((Expr_and_tmpContext)_localctx).os.isThereANDoperator==0)
@@ -2064,12 +2142,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-
-						mips.addCode( "li $s4, 1" );
-					
-			setState(343);
+			setState(350);
 			((Expr_eqContext)_localctx).ou = expr_cmp();
-			setState(344);
+			setState(351);
 			((Expr_eqContext)_localctx).os = expr_eq_tmp();
 				
 						if(((Expr_eqContext)_localctx).os.isThereEQNEQoperator==0)
@@ -2085,12 +2160,15 @@ public class Atalk_p2Parser extends Parser {
 								((Expr_eqContext)_localctx).item =  new SymbolTableTemporaryVariableItem( new Variable( "temp" , NoType.getInstance() ) , 0 );
 							else
 									((Expr_eqContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-							mips.generateCodeForEquality( ((Expr_eqContext)_localctx).os.eqoperator , ((Expr_eqContext)_localctx).ou.item , ((Expr_eqContext)_localctx).os.isFirstLValue  );
+							mips.generateCodeForEqualityOrCompare( "==" , ((Expr_eqContext)_localctx).ou.item , ((Expr_eqContext)_localctx).os.isFirstLValue  );
+							if( ((Expr_eqContext)_localctx).os.eqoperator.equals( "<>" ) )
+								mips.addCode( "xori $s4, $s4, 1" );
 							mips.addCode( "sw $s4, 0($t6)" );
 							mips.addCode( "addiu $fp, $fp, -4" );
 							mips.addCode( "sw $t6, 0($fp)" );
 							mips.addCode( "addiu $fp, $fp, 4" );
 							mips.addCode( "addiu $t6, $t6, -4" );
+							mips.addCode( "#end of equality" );
 						}
 					
 			}
@@ -2141,14 +2219,14 @@ public class Atalk_p2Parser extends Parser {
 		enterRule(_localctx, 46, RULE_expr_eq_tmp);
 		int _la;
 		try {
-			setState(354);
+			setState(361);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__27:
 			case T__28:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(347);
+				setState(354);
 				((Expr_eq_tmpContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==T__27 || _la==T__28) ) {
@@ -2160,9 +2238,9 @@ public class Atalk_p2Parser extends Parser {
 					consume();
 				}
 				((Expr_eq_tmpContext)_localctx).eqline = (((Expr_eq_tmpContext)_localctx).op!=null?((Expr_eq_tmpContext)_localctx).op.getLine():0);((Expr_eq_tmpContext)_localctx).isThereEQNEQoperator = 1;((Expr_assignContext)getInvokingContext(17)).couldBeAssigned = 0; ((Expr_eq_tmpContext)_localctx).eqoperator =  (((Expr_eq_tmpContext)_localctx).op!=null?((Expr_eq_tmpContext)_localctx).op.getText():null); 
-				setState(349);
+				setState(356);
 				((Expr_eq_tmpContext)_localctx).ou = ((Expr_eq_tmpContext)_localctx).expr_cmp = expr_cmp();
-				setState(350);
+				setState(357);
 				((Expr_eq_tmpContext)_localctx).os = expr_eq_tmp();
 
 							((Expr_eq_tmpContext)_localctx).isFirstLValue =  ((Expr_eq_tmpContext)_localctx).expr_cmp.item.isLValue;
@@ -2179,7 +2257,9 @@ public class Atalk_p2Parser extends Parser {
 									((Expr_eq_tmpContext)_localctx).item =  new SymbolTableTemporaryVariableItem( new Variable( "temp" , NoType.getInstance() ) , 0 );
 								else
 									((Expr_eq_tmpContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-								mips.generateCodeForEquality( ((Expr_eq_tmpContext)_localctx).os.eqoperator , ((Expr_eq_tmpContext)_localctx).ou.item , ((Expr_eq_tmpContext)_localctx).os.isFirstLValue  );	
+								mips.generateCodeForEqualityOrCompare( "==" , ((Expr_eq_tmpContext)_localctx).ou.item , ((Expr_eq_tmpContext)_localctx).os.isFirstLValue  );
+								if( ((Expr_eq_tmpContext)_localctx).os.eqoperator.equals( "<>" ) )
+									mips.addCode( "xori $s4, $s4, 1" );	
 							}
 						
 				}
@@ -2195,6 +2275,7 @@ public class Atalk_p2Parser extends Parser {
 				enterOuterAlt(_localctx, 2);
 				{
 
+						mips.addCode( "li $s4, 1 #equality started" );
 						((Expr_eq_tmpContext)_localctx).isThereEQNEQoperator = 0;
 						((Expr_eq_tmpContext)_localctx).item = null;
 					
@@ -2245,9 +2326,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(356);
+			setState(363);
 			((Expr_cmpContext)_localctx).ou = expr_add();
-			setState(357);
+			setState(364);
 			((Expr_cmpContext)_localctx).os = expr_cmp_tmp();
 
 						if(((Expr_cmpContext)_localctx).os.isThereCMPoperator==0)
@@ -2259,7 +2340,13 @@ public class Atalk_p2Parser extends Parser {
 								print( "Error in line " + ((Expr_cmpContext)_localctx).os.compLine + " operands for comparision must be integers" );
 							else
 								((Expr_cmpContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-							mips.operationCommand( ((Expr_cmpContext)_localctx).os.compoperator );
+							mips.generateCodeForEqualityOrCompare( ((Expr_cmpContext)_localctx).os.compoperator , ((Expr_cmpContext)_localctx).ou.item , ((Expr_cmpContext)_localctx).os.isFirstLValue );
+							mips.addCode( "sw $s4, 0($t6)" );
+							mips.addCode( "addiu $fp, $fp, -4" );
+							mips.addCode( "sw $t6, 0($fp)" );
+							mips.addCode( "addiu $fp, $fp, 4" );
+							mips.addCode( "addiu $t6, $t6, -4" );
+							mips.addCode( "#end of compare" );
 						}
 					
 			}
@@ -2280,6 +2367,7 @@ public class Atalk_p2Parser extends Parser {
 		public int isThereCMPoperator;
 		public int compLine;
 		public String compoperator;
+		public int isFirstLValue;
 		public Token op;
 		public Expr_addContext ou;
 		public Expr_cmp_tmpContext os;
@@ -2308,14 +2396,14 @@ public class Atalk_p2Parser extends Parser {
 		enterRule(_localctx, 50, RULE_expr_cmp_tmp);
 		int _la;
 		try {
-			setState(367);
+			setState(374);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__1:
 			case T__2:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(360);
+				setState(367);
 				((Expr_cmp_tmpContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==T__1 || _la==T__2) ) {
@@ -2327,11 +2415,12 @@ public class Atalk_p2Parser extends Parser {
 					consume();
 				}
 				((Expr_cmp_tmpContext)_localctx).isThereCMPoperator = 1; ((Expr_assignContext)getInvokingContext(17)).couldBeAssigned = 0; ((Expr_cmp_tmpContext)_localctx).compLine =  (((Expr_cmp_tmpContext)_localctx).op!=null?((Expr_cmp_tmpContext)_localctx).op.getLine():0) ; ((Expr_cmp_tmpContext)_localctx).compoperator =  (((Expr_cmp_tmpContext)_localctx).op!=null?((Expr_cmp_tmpContext)_localctx).op.getText():null); 
-				setState(362);
+				setState(369);
 				((Expr_cmp_tmpContext)_localctx).ou = expr_add();
-				setState(363);
+				setState(370);
 				((Expr_cmp_tmpContext)_localctx).os = expr_cmp_tmp();
 
+							((Expr_cmp_tmpContext)_localctx).isFirstLValue =  ((Expr_cmp_tmpContext)_localctx).ou.item.isLValue;
 							if(((Expr_cmp_tmpContext)_localctx).os.isThereCMPoperator==0)
 							{
 								if(((Expr_cmp_tmpContext)_localctx).ou.item.getVariable().getType() instanceof ArrayType ||((Expr_cmp_tmpContext)_localctx).ou.item.getVariable().getType() instanceof CharType){
@@ -2352,7 +2441,8 @@ public class Atalk_p2Parser extends Parser {
 									((Expr_cmp_tmpContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp",NoType.getInstance()),0);
 								else
 									((Expr_cmp_tmpContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-								mips.operationCommand( ((Expr_cmp_tmpContext)_localctx).os.compoperator );
+								//mips.operationCommand( ((Expr_cmp_tmpContext)_localctx).os.compoperator );
+								mips.generateCodeForEqualityOrCompare( ((Expr_cmp_tmpContext)_localctx).os.compoperator , ((Expr_cmp_tmpContext)_localctx).ou.item , ((Expr_cmp_tmpContext)_localctx).os.isFirstLValue );
 							}
 						
 				}
@@ -2370,6 +2460,7 @@ public class Atalk_p2Parser extends Parser {
 				enterOuterAlt(_localctx, 2);
 				{
 
+						mips.addCode( "li $s4, 1 #compare started");
 						((Expr_cmp_tmpContext)_localctx).isThereCMPoperator = 0;
 						((Expr_cmp_tmpContext)_localctx).item = null;
 					
@@ -2420,9 +2511,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(369);
+			setState(376);
 			((Expr_addContext)_localctx).ou = expr_mult();
-			setState(370);
+			setState(377);
 			((Expr_addContext)_localctx).os = expr_add_tmp();
 
 						if(((Expr_addContext)_localctx).os.isTherePMoperator==0)
@@ -2487,14 +2578,14 @@ public class Atalk_p2Parser extends Parser {
 		enterRule(_localctx, 54, RULE_expr_add_tmp);
 		int _la;
 		try {
-			setState(380);
+			setState(387);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__29:
 			case T__30:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(373);
+				setState(380);
 				((Expr_add_tmpContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==T__29 || _la==T__30) ) {
@@ -2510,9 +2601,9 @@ public class Atalk_p2Parser extends Parser {
 							((Expr_assignContext)getInvokingContext(17)).couldBeAssigned = 0; 
 							((Expr_add_tmpContext)_localctx).addLine =  (((Expr_add_tmpContext)_localctx).op!=null?((Expr_add_tmpContext)_localctx).op.getLine():0); ((Expr_add_tmpContext)_localctx).asoperator =  (((Expr_add_tmpContext)_localctx).op!=null?((Expr_add_tmpContext)_localctx).op.getText():null); 
 						
-				setState(375);
+				setState(382);
 				((Expr_add_tmpContext)_localctx).ou = expr_mult();
-				setState(376);
+				setState(383);
 				((Expr_add_tmpContext)_localctx).os = expr_add_tmp();
 
 							if(((Expr_add_tmpContext)_localctx).os.isTherePMoperator==0)
@@ -2602,9 +2693,9 @@ public class Atalk_p2Parser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(382);
+			setState(389);
 			((Expr_multContext)_localctx).ou = expr_un();
-			setState(383);
+			setState(390);
 			((Expr_multContext)_localctx).os = expr_mult_tmp();
 
 						if(((Expr_multContext)_localctx).os.isThereMDoperator==0)
@@ -2668,14 +2759,14 @@ public class Atalk_p2Parser extends Parser {
 		enterRule(_localctx, 58, RULE_expr_mult_tmp);
 		int _la;
 		try {
-			setState(393);
+			setState(400);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__31:
 			case T__32:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(386);
+				setState(393);
 				((Expr_mult_tmpContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==T__31 || _la==T__32) ) {
@@ -2687,9 +2778,9 @@ public class Atalk_p2Parser extends Parser {
 					consume();
 				}
 				((Expr_mult_tmpContext)_localctx).isThereMDoperator = 1;((Expr_assignContext)getInvokingContext(17)).couldBeAssigned = 0; ((Expr_mult_tmpContext)_localctx).multLine =  (((Expr_mult_tmpContext)_localctx).op!=null?((Expr_mult_tmpContext)_localctx).op.getLine():0) ; ((Expr_mult_tmpContext)_localctx).multoperator =  (((Expr_mult_tmpContext)_localctx).op!=null?((Expr_mult_tmpContext)_localctx).op.getText():null);
-				setState(388);
+				setState(395);
 				((Expr_mult_tmpContext)_localctx).ou = expr_un();
-				setState(389);
+				setState(396);
 				((Expr_mult_tmpContext)_localctx).os = expr_mult_tmp();
 
 							if(((Expr_mult_tmpContext)_localctx).os.isThereMDoperator==0)
@@ -2709,7 +2800,7 @@ public class Atalk_p2Parser extends Parser {
 										((Expr_mult_tmpContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
 								else
 								{
-									print( "Error in Line : " + (((Expr_mult_tmpContext)_localctx).op!=null?((Expr_mult_tmpContext)_localctx).op.getLine():0) + " the operands must be integers" );
+									print( "Error in Line " + (((Expr_mult_tmpContext)_localctx).op!=null?((Expr_mult_tmpContext)_localctx).op.getLine():0) + ":the operands must be integers" );
 									((Expr_mult_tmpContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp",NoType.getInstance()),0);
 								}
 								mips.operationCommand( ((Expr_mult_tmpContext)_localctx).os.multoperator );
@@ -2782,14 +2873,14 @@ public class Atalk_p2Parser extends Parser {
 		enterRule(_localctx, 60, RULE_expr_un);
 		int _la;
 		try {
-			setState(403);
+			setState(410);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__30:
 			case T__33:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(395);
+				setState(402);
 				((Expr_unContext)_localctx).op = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==T__30 || _la==T__33) ) {
@@ -2801,7 +2892,7 @@ public class Atalk_p2Parser extends Parser {
 					consume();
 				}
 				((Expr_unContext)_localctx).isThereUnOperator = 1;((Expr_assignContext)getInvokingContext(17)).couldBeAssigned = 0;
-				setState(397);
+				setState(404);
 				((Expr_unContext)_localctx).ou = expr_un();
 
 							if(((Expr_unContext)_localctx).ou.isThereUnOperator==0 && (((Expr_unContext)_localctx).ou.item.getVariable().getType() instanceof ArrayType ||((Expr_unContext)_localctx).ou.item.getVariable().getType() instanceof CharType)){
@@ -2824,7 +2915,7 @@ public class Atalk_p2Parser extends Parser {
 			case ID:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(400);
+				setState(407);
 				((Expr_unContext)_localctx).or = expr_mem();
 
 							((Expr_unContext)_localctx).item = ((Expr_unContext)_localctx).or.item;((Expr_unContext)_localctx).isThereUnOperator = 0;
@@ -2882,9 +2973,9 @@ public class Atalk_p2Parser extends Parser {
 						((Expr_memContext)_localctx).badAccessFlag = 0;
 						((Expr_memContext)_localctx).mem_tmp_cnt = 0;
 					
-			setState(406);
+			setState(413);
 			((Expr_memContext)_localctx).og = expr_other();
-			setState(407);
+			setState(414);
 			((Expr_memContext)_localctx).oi = expr_mem_tmp();
 
 						if(_localctx.badAccessFlag==1)
@@ -2974,18 +3065,18 @@ public class Atalk_p2Parser extends Parser {
 		Expr_mem_tmpContext _localctx = new Expr_mem_tmpContext(_ctx, getState());
 		enterRule(_localctx, 64, RULE_expr_mem_tmp);
 		try {
-			setState(419);
+			setState(426);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case T__9:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(410);
+				setState(417);
 				((Expr_mem_tmpContext)_localctx).oi = match(T__9);
 				((Expr_mem_tmpContext)_localctx).arrayAccessLine = (((Expr_mem_tmpContext)_localctx).oi!=null?((Expr_mem_tmpContext)_localctx).oi.getLine():0); ((Expr_mem_tmpContext)_localctx).isExecuted =  1;
-				setState(412);
+				setState(419);
 				((Expr_mem_tmpContext)_localctx).op = expr();
-				setState(413);
+				setState(420);
 				match(T__10);
 
 								((Expr_mem_tmpContext)_localctx).indices =  new ArrayList<SymbolTableTemporaryVariableItem>();
@@ -2993,7 +3084,7 @@ public class Atalk_p2Parser extends Parser {
 								if(! ( ((Expr_mem_tmpContext)_localctx).op.item.getVariable().getType() instanceof IntType ) && ! ( ((Expr_mem_tmpContext)_localctx).op.item.getVariable().getType() instanceof NoType ) )
 									((Expr_memContext)getInvokingContext(31)).badAccessFlag = 1;
 						
-				setState(415);
+				setState(422);
 				((Expr_mem_tmpContext)_localctx).oj = expr_mem_tmp();
 
 							if( ((Expr_mem_tmpContext)_localctx).oj.isExecuted == 1 )
@@ -3085,13 +3176,13 @@ public class Atalk_p2Parser extends Parser {
 		enterRule(_localctx, 66, RULE_expr_other);
 		int _la;
 		try {
-			setState(454);
+			setState(461);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case CONST_NUM:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(421);
+				setState(428);
 				((Expr_otherContext)_localctx).oa = match(CONST_NUM);
 
 							((ExprContext)getInvokingContext(16)).lineNumber =  (((Expr_otherContext)_localctx).oa!=null?((Expr_otherContext)_localctx).oa.getLine():0);
@@ -3105,7 +3196,7 @@ public class Atalk_p2Parser extends Parser {
 			case CONST_CHAR:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(423);
+				setState(430);
 				((Expr_otherContext)_localctx).ot = match(CONST_CHAR);
 
 							((ExprContext)getInvokingContext(16)).lineNumber =  (((Expr_otherContext)_localctx).ot!=null?((Expr_otherContext)_localctx).ot.getLine():0);
@@ -3121,7 +3212,7 @@ public class Atalk_p2Parser extends Parser {
 			case CONST_STR:
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(425);
+				setState(432);
 				((Expr_otherContext)_localctx).oe = match(CONST_STR);
 
 							((ExprContext)getInvokingContext(16)).lineNumber =  (((Expr_otherContext)_localctx).oe!=null?((Expr_otherContext)_localctx).oe.getLine():0);
@@ -3138,7 +3229,7 @@ public class Atalk_p2Parser extends Parser {
 			case ID:
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(427);
+				setState(434);
 				((Expr_otherContext)_localctx).oj = match(ID);
 					
 							((Expr_otherContext)_localctx).name =  (((Expr_otherContext)_localctx).oj!=null?((Expr_otherContext)_localctx).oj.getText():null);
@@ -3164,9 +3255,9 @@ public class Atalk_p2Parser extends Parser {
 			case T__34:
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(429);
+				setState(436);
 				((Expr_otherContext)_localctx).oy = match(T__34);
-				setState(430);
+				setState(437);
 				((Expr_otherContext)_localctx).or = expr();
 
 							ArrayList<SymbolTableTemporaryVariableItem> recordList = new ArrayList<SymbolTableTemporaryVariableItem>();
@@ -3180,15 +3271,15 @@ public class Atalk_p2Parser extends Parser {
 								((Expr_otherContext)_localctx).item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", NoType.getInstance() ) ,0);
 							recordList.add( ((Expr_otherContext)_localctx).or.item );
 						
-				setState(438);
+				setState(445);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
 				while (_la==T__6) {
 					{
 					{
-					setState(432);
+					setState(439);
 					match(T__6);
-					setState(433);
+					setState(440);
 					((Expr_otherContext)_localctx).ov = expr();
 
 								if( !( ((Expr_otherContext)_localctx).or.item.getVariable().getType().equals(((Expr_otherContext)_localctx).ov.item.getVariable().getType()) ) )
@@ -3203,43 +3294,38 @@ public class Atalk_p2Parser extends Parser {
 							
 					}
 					}
-					setState(440);
+					setState(447);
 					_errHandler.sync(this);
 					_la = _input.LA(1);
 				}
-				setState(441);
+				setState(448);
 				match(T__35);
 
 							if( !( ((Expr_otherContext)_localctx).or.item.getVariable().getType() instanceof NoType ) && !inconsistencyFlag )
 							{
-								if( ((Expr_otherContext)_localctx).or.item.getVariable().getType() instanceof ArrayType )
-									( (ArrayType) _localctx.item.getVariable().getType() ).pushNewDimensionToFirst(dimen);
-								else
-								{
-									if( ((Expr_otherContext)_localctx).or.item.getVariable().getType() instanceof IntType )
-										((Expr_otherContext)_localctx).item =  new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new IntArrayType() ) ,0 );
-									else
-										((Expr_otherContext)_localctx).item =  new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new CharArrayType() ) ,0 );
-									( (ArrayType) _localctx.item.getVariable().getType() ).pushNewDimensionToFirst( dimen );
-								}
+								mips.generateCodeForRecord( recordList );
+								if( ((Expr_otherContext)_localctx).or.item.getVariable().getType() instanceof IntType )
+									((Expr_otherContext)_localctx).item =  new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new IntArrayType() ) ,0 );
+								else if( ((Expr_otherContext)_localctx).or.item.getVariable().getType() instanceof CharType )
+									((Expr_otherContext)_localctx).item =  new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new CharArrayType() ) ,0 );
+								( (ArrayType) _localctx.item.getVariable().getType() ).pushNewDimensionToFirst( dimen );
 								_localctx.item.isLValue = 0;
 							}
 							else
 								((Expr_otherContext)_localctx).item =  new SymbolTableTemporaryVariableItem(new Variable("temp_curly", NoType.getInstance() ) ,0 );
-							mips.generateCodeForRecord( recordList );
 						
 				}
 				break;
 			case T__36:
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(444);
+				setState(451);
 				((Expr_otherContext)_localctx).ow = match(T__36);
-				setState(445);
+				setState(452);
 				match(T__5);
-				setState(446);
+				setState(453);
 				((Expr_otherContext)_localctx).CONST_NUM = match(CONST_NUM);
-				setState(447);
+				setState(454);
 				match(T__7);
 
 							((ExprContext)getInvokingContext(16)).lineNumber =  (((Expr_otherContext)_localctx).ow!=null?((Expr_otherContext)_localctx).ow.getLine():0);
@@ -3260,11 +3346,11 @@ public class Atalk_p2Parser extends Parser {
 			case T__5:
 				enterOuterAlt(_localctx, 7);
 				{
-				setState(449);
+				setState(456);
 				((Expr_otherContext)_localctx).oz = match(T__5);
-				setState(450);
+				setState(457);
 				((Expr_otherContext)_localctx).od = expr();
-				setState(451);
+				setState(458);
 				match(T__7);
 
 							((ExprContext)getInvokingContext(16)).lineNumber =  (((Expr_otherContext)_localctx).oz!=null?((Expr_otherContext)_localctx).oz.getLine():0);
@@ -3291,7 +3377,7 @@ public class Atalk_p2Parser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3.\u01cb\4\2\t\2\4"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3.\u01d2\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -3300,153 +3386,155 @@ public class Atalk_p2Parser extends Parser {
 		"\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\7\3\\\n\3\f\3\16\3_\13\3\3\3\3\3"+
 		"\3\3\3\3\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\7\4r\n\4"+
 		"\f\4\16\4u\13\4\5\4w\n\4\3\4\3\4\3\4\3\4\3\4\3\4\3\4\3\5\3\5\3\5\3\5\7"+
-		"\5\u0084\n\5\f\5\16\5\u0087\13\5\3\5\3\5\3\6\3\6\3\6\3\6\7\6\u008f\n\6"+
-		"\f\6\16\6\u0092\13\6\3\6\3\6\3\6\3\6\7\6\u0098\n\6\f\6\16\6\u009b\13\6"+
-		"\5\6\u009d\n\6\3\7\3\7\3\7\3\7\3\7\3\7\3\7\3\7\3\b\3\b\3\b\3\b\3\b\3\b"+
-		"\3\b\3\b\3\b\3\b\3\b\3\b\3\b\7\b\u00b4\n\b\f\b\16\b\u00b7\13\b\3\b\3\b"+
-		"\3\b\3\b\3\b\3\b\5\b\u00bf\n\b\3\b\3\b\3\b\3\t\3\t\3\t\3\t\3\t\3\t\3\t"+
-		"\3\t\3\t\3\t\3\t\3\t\3\n\3\n\7\n\u00d2\n\n\f\n\16\n\u00d5\13\n\3\13\3"+
-		"\13\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3\13\5\13\u00e2\n\13\3\f\3"+
-		"\f\3\f\3\f\3\f\3\f\3\f\3\f\5\f\u00ec\n\f\3\f\3\f\3\f\3\f\3\f\3\f\3\f\3"+
-		"\f\3\f\5\f\u00f7\n\f\3\f\7\f\u00fa\n\f\f\f\16\f\u00fd\13\f\3\f\3\f\3\r"+
-		"\3\r\3\r\3\r\3\r\3\r\3\r\5\r\u0108\n\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r"+
-		"\3\r\3\r\7\r\u0114\n\r\f\r\16\r\u0117\13\r\5\r\u0119\n\r\3\r\3\r\3\r\3"+
-		"\r\3\16\3\16\3\16\3\16\3\16\3\16\3\16\3\17\3\17\3\17\3\20\3\20\3\20\3"+
-		"\21\3\21\3\21\3\21\3\22\3\22\3\22\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3"+
-		"\23\3\23\3\23\5\23\u013d\n\23\3\24\3\24\3\24\3\24\3\25\3\25\3\25\3\25"+
-		"\3\25\3\25\3\25\5\25\u014a\n\25\3\26\3\26\3\26\3\26\3\27\3\27\3\27\3\27"+
-		"\3\27\3\27\3\27\5\27\u0157\n\27\3\30\3\30\3\30\3\30\3\30\3\31\3\31\3\31"+
-		"\3\31\3\31\3\31\3\31\5\31\u0165\n\31\3\32\3\32\3\32\3\32\3\33\3\33\3\33"+
-		"\3\33\3\33\3\33\3\33\5\33\u0172\n\33\3\34\3\34\3\34\3\34\3\35\3\35\3\35"+
-		"\3\35\3\35\3\35\3\35\5\35\u017f\n\35\3\36\3\36\3\36\3\36\3\37\3\37\3\37"+
-		"\3\37\3\37\3\37\3\37\5\37\u018c\n\37\3 \3 \3 \3 \3 \3 \3 \3 \5 \u0196"+
-		"\n \3!\3!\3!\3!\3!\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\3\"\5\"\u01a6\n\"\3"+
-		"#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\7#\u01b7\n#\f#\16#\u01ba\13"+
-		"#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\5#\u01c9\n#\3#\2\2$\2\4\6\b\n"+
-		"\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@BD\2\b\3\3++\3"+
-		"\2\36\37\3\2\4\5\3\2 !\3\2\"#\4\2!!$$\2\u01d6\2F\3\2\2\2\4P\3\2\2\2\6"+
-		"d\3\2\2\2\b\177\3\2\2\2\n\u009c\3\2\2\2\f\u009e\3\2\2\2\16\u00a6\3\2\2"+
-		"\2\20\u00c3\3\2\2\2\22\u00d3\3\2\2\2\24\u00e1\3\2\2\2\26\u00e3\3\2\2\2"+
-		"\30\u0100\3\2\2\2\32\u011e\3\2\2\2\34\u0125\3\2\2\2\36\u0128\3\2\2\2 "+
-		"\u012b\3\2\2\2\"\u012f\3\2\2\2$\u013c\3\2\2\2&\u013e\3\2\2\2(\u0149\3"+
-		"\2\2\2*\u014b\3\2\2\2,\u0156\3\2\2\2.\u0158\3\2\2\2\60\u0164\3\2\2\2\62"+
-		"\u0166\3\2\2\2\64\u0171\3\2\2\2\66\u0173\3\2\2\28\u017e\3\2\2\2:\u0180"+
-		"\3\2\2\2<\u018b\3\2\2\2>\u0195\3\2\2\2@\u0197\3\2\2\2B\u01a5\3\2\2\2D"+
-		"\u01c8\3\2\2\2FK\b\2\1\2GJ\5\4\3\2HJ\7+\2\2IG\3\2\2\2IH\3\2\2\2JM\3\2"+
-		"\2\2KI\3\2\2\2KL\3\2\2\2LN\3\2\2\2MK\3\2\2\2NO\b\2\1\2O\3\3\2\2\2PQ\7"+
-		"\3\2\2QR\7,\2\2RS\b\3\1\2ST\7\4\2\2TU\7(\2\2UV\b\3\1\2VW\7\5\2\2W]\7+"+
-		"\2\2X\\\5\b\5\2Y\\\5\6\4\2Z\\\7+\2\2[X\3\2\2\2[Y\3\2\2\2[Z\3\2\2\2\\_"+
-		"\3\2\2\2][\3\2\2\2]^\3\2\2\2^`\3\2\2\2_]\3\2\2\2`a\7\6\2\2ab\t\2\2\2b"+
-		"c\b\3\1\2c\5\3\2\2\2de\b\4\1\2ef\7\7\2\2fg\7,\2\2gh\b\4\1\2hv\7\b\2\2"+
-		"ij\5\n\6\2jk\7,\2\2ks\b\4\1\2lm\7\t\2\2mn\5\n\6\2no\7,\2\2op\b\4\1\2p"+
-		"r\3\2\2\2ql\3\2\2\2ru\3\2\2\2sq\3\2\2\2st\3\2\2\2tw\3\2\2\2us\3\2\2\2"+
-		"vi\3\2\2\2vw\3\2\2\2wx\3\2\2\2xy\7\n\2\2yz\7+\2\2z{\5\22\n\2{|\7\6\2\2"+
-		"|}\7+\2\2}~\b\4\1\2~\7\3\2\2\2\177\u0080\5\n\6\2\u0080\u0085\7,\2\2\u0081"+
-		"\u0082\7\t\2\2\u0082\u0084\7,\2\2\u0083\u0081\3\2\2\2\u0084\u0087\3\2"+
-		"\2\2\u0085\u0083\3\2\2\2\u0085\u0086\3\2\2\2\u0086\u0088\3\2\2\2\u0087"+
-		"\u0085\3\2\2\2\u0088\u0089\7+\2\2\u0089\t\3\2\2\2\u008a\u0090\7\13\2\2"+
-		"\u008b\u008c\7\f\2\2\u008c\u008d\7(\2\2\u008d\u008f\7\r\2\2\u008e\u008b"+
-		"\3\2\2\2\u008f\u0092\3\2\2\2\u0090\u008e\3\2\2\2\u0090\u0091\3\2\2\2\u0091"+
-		"\u009d\3\2\2\2\u0092\u0090\3\2\2\2\u0093\u0099\7\16\2\2\u0094\u0095\7"+
-		"\f\2\2\u0095\u0096\7(\2\2\u0096\u0098\7\r\2\2\u0097\u0094\3\2\2\2\u0098"+
-		"\u009b\3\2\2\2\u0099\u0097\3\2\2\2\u0099\u009a\3\2\2\2\u009a\u009d\3\2"+
-		"\2\2\u009b\u0099\3\2\2\2\u009c\u008a\3\2\2\2\u009c\u0093\3\2\2\2\u009d"+
-		"\13\3\2\2\2\u009e\u009f\b\7\1\2\u009f\u00a0\7\17\2\2\u00a0\u00a1\7+\2"+
-		"\2\u00a1\u00a2\5\22\n\2\u00a2\u00a3\7\6\2\2\u00a3\u00a4\7+\2\2\u00a4\u00a5"+
-		"\b\7\1\2\u00a5\r\3\2\2\2\u00a6\u00a7\7\20\2\2\u00a7\u00a8\5\"\22\2\u00a8"+
-		"\u00a9\b\b\1\2\u00a9\u00aa\7+\2\2\u00aa\u00ab\5\22\n\2\u00ab\u00b5\b\b"+
-		"\1\2\u00ac\u00ad\7\21\2\2\u00ad\u00ae\5\"\22\2\u00ae\u00af\b\b\1\2\u00af"+
-		"\u00b0\7+\2\2\u00b0\u00b1\5\22\n\2\u00b1\u00b2\b\b\1\2\u00b2\u00b4\3\2"+
-		"\2\2\u00b3\u00ac\3\2\2\2\u00b4\u00b7\3\2\2\2\u00b5\u00b3\3\2\2\2\u00b5"+
-		"\u00b6\3\2\2\2\u00b6\u00be\3\2\2\2\u00b7\u00b5\3\2\2\2\u00b8\u00b9\7\22"+
-		"\2\2\u00b9\u00ba\7+\2\2\u00ba\u00bb\b\b\1\2\u00bb\u00bc\5\22\n\2\u00bc"+
-		"\u00bd\b\b\1\2\u00bd\u00bf\3\2\2\2\u00be\u00b8\3\2\2\2\u00be\u00bf\3\2"+
-		"\2\2\u00bf\u00c0\3\2\2\2\u00c0\u00c1\7\6\2\2\u00c1\u00c2\7+\2\2\u00c2"+
-		"\17\3\2\2\2\u00c3\u00c4\7\23\2\2\u00c4\u00c5\b\t\1\2\u00c5\u00c6\7,\2"+
-		"\2\u00c6\u00c7\7\24\2\2\u00c7\u00c8\5\"\22\2\u00c8\u00c9\b\t\1\2\u00c9"+
-		"\u00ca\7+\2\2\u00ca\u00cb\5\22\n\2\u00cb\u00cc\7\6\2\2\u00cc\u00cd\b\t"+
-		"\1\2\u00cd\u00ce\7+\2\2\u00ce\21\3\2\2\2\u00cf\u00d2\5\24\13\2\u00d0\u00d2"+
-		"\7+\2\2\u00d1\u00cf\3\2\2\2\u00d1\u00d0\3\2\2\2\u00d2\u00d5\3\2\2\2\u00d3"+
-		"\u00d1\3\2\2\2\u00d3\u00d4\3\2\2\2\u00d4\23\3\2\2\2\u00d5\u00d3\3\2\2"+
-		"\2\u00d6\u00e2\5\26\f\2\u00d7\u00d8\5 \21\2\u00d8\u00d9\b\13\1\2\u00d9"+
-		"\u00e2\3\2\2\2\u00da\u00e2\5\20\t\2\u00db\u00e2\5\16\b\2\u00dc\u00e2\5"+
-		"\34\17\2\u00dd\u00e2\5\36\20\2\u00de\u00e2\5\30\r\2\u00df\u00e2\5\32\16"+
-		"\2\u00e0\u00e2\5\f\7\2\u00e1\u00d6\3\2\2\2\u00e1\u00d7\3\2\2\2\u00e1\u00da"+
-		"\3\2\2\2\u00e1\u00db\3\2\2\2\u00e1\u00dc\3\2\2\2\u00e1\u00dd\3\2\2\2\u00e1"+
-		"\u00de\3\2\2\2\u00e1\u00df\3\2\2\2\u00e1\u00e0\3\2\2\2\u00e2\25\3\2\2"+
-		"\2\u00e3\u00e4\5\n\6\2\u00e4\u00e5\7,\2\2\u00e5\u00eb\b\f\1\2\u00e6\u00e7"+
-		"\b\f\1\2\u00e7\u00e8\7\25\2\2\u00e8\u00e9\5\"\22\2\u00e9\u00ea\b\f\1\2"+
-		"\u00ea\u00ec\3\2\2\2\u00eb\u00e6\3\2\2\2\u00eb\u00ec\3\2\2\2\u00ec\u00ed"+
-		"\3\2\2\2\u00ed\u00fb\b\f\1\2\u00ee\u00ef\7\t\2\2\u00ef\u00f0\7,\2\2\u00f0"+
-		"\u00f6\b\f\1\2\u00f1\u00f2\b\f\1\2\u00f2\u00f3\7\25\2\2\u00f3\u00f4\5"+
-		"\"\22\2\u00f4\u00f5\b\f\1\2\u00f5\u00f7\3\2\2\2\u00f6\u00f1\3\2\2\2\u00f6"+
-		"\u00f7\3\2\2\2\u00f7\u00f8\3\2\2\2\u00f8\u00fa\b\f\1\2\u00f9\u00ee\3\2"+
-		"\2\2\u00fa\u00fd\3\2\2\2\u00fb\u00f9\3\2\2\2\u00fb\u00fc\3\2\2\2\u00fc"+
-		"\u00fe\3\2\2\2\u00fd\u00fb\3\2\2\2\u00fe\u00ff\7+\2\2\u00ff\27\3\2\2\2"+
-		"\u0100\u0107\b\r\1\2\u0101\u0102\7,\2\2\u0102\u0108\b\r\1\2\u0103\u0104"+
-		"\7\26\2\2\u0104\u0108\b\r\1\2\u0105\u0106\7\27\2\2\u0106\u0108\b\r\1\2"+
-		"\u0107\u0101\3\2\2\2\u0107\u0103\3\2\2\2\u0107\u0105\3\2\2\2\u0108\u0109"+
-		"\3\2\2\2\u0109\u010a\7\30\2\2\u010a\u010b\7,\2\2\u010b\u010c\7\b\2\2\u010c"+
-		"\u0118\b\r\1\2\u010d\u010e\5\"\22\2\u010e\u0115\b\r\1\2\u010f\u0110\7"+
-		"\t\2\2\u0110\u0111\5\"\22\2\u0111\u0112\b\r\1\2\u0112\u0114\3\2\2\2\u0113"+
-		"\u010f\3\2\2\2\u0114\u0117\3\2\2\2\u0115\u0113\3\2\2\2\u0115\u0116\3\2"+
-		"\2\2\u0116\u0119\3\2\2\2\u0117\u0115\3\2\2\2\u0118\u010d\3\2\2\2\u0118"+
-		"\u0119\3\2\2\2\u0119\u011a\3\2\2\2\u011a\u011b\7\n\2\2\u011b\u011c\b\r"+
-		"\1\2\u011c\u011d\7+\2\2\u011d\31\3\2\2\2\u011e\u011f\7\31\2\2\u011f\u0120"+
-		"\7\b\2\2\u0120\u0121\5\"\22\2\u0121\u0122\b\16\1\2\u0122\u0123\7\n\2\2"+
-		"\u0123\u0124\7+\2\2\u0124\33\3\2\2\2\u0125\u0126\7\32\2\2\u0126\u0127"+
-		"\7+\2\2\u0127\35\3\2\2\2\u0128\u0129\7\33\2\2\u0129\u012a\7+\2\2\u012a"+
-		"\37\3\2\2\2\u012b\u012c\5\"\22\2\u012c\u012d\7+\2\2\u012d\u012e\b\21\1"+
-		"\2\u012e!\3\2\2\2\u012f\u0130\5$\23\2\u0130\u0131\b\22\1\2\u0131#\3\2"+
-		"\2\2\u0132\u0133\b\23\1\2\u0133\u0134\5&\24\2\u0134\u0135\7\25\2\2\u0135"+
-		"\u0136\5$\23\2\u0136\u0137\b\23\1\2\u0137\u013d\3\2\2\2\u0138\u0139\b"+
-		"\23\1\2\u0139\u013a\5&\24\2\u013a\u013b\b\23\1\2\u013b\u013d\3\2\2\2\u013c"+
-		"\u0132\3\2\2\2\u013c\u0138\3\2\2\2\u013d%\3\2\2\2\u013e\u013f\5*\26\2"+
-		"\u013f\u0140\5(\25\2\u0140\u0141\b\24\1\2\u0141\'\3\2\2\2\u0142\u0143"+
-		"\7\34\2\2\u0143\u0144\b\25\1\2\u0144\u0145\5*\26\2\u0145\u0146\5(\25\2"+
-		"\u0146\u0147\b\25\1\2\u0147\u014a\3\2\2\2\u0148\u014a\b\25\1\2\u0149\u0142"+
-		"\3\2\2\2\u0149\u0148\3\2\2\2\u014a)\3\2\2\2\u014b\u014c\5.\30\2\u014c"+
-		"\u014d\5,\27\2\u014d\u014e\b\26\1\2\u014e+\3\2\2\2\u014f\u0150\7\35\2"+
-		"\2\u0150\u0151\b\27\1\2\u0151\u0152\5.\30\2\u0152\u0153\5,\27\2\u0153"+
-		"\u0154\b\27\1\2\u0154\u0157\3\2\2\2\u0155\u0157\b\27\1\2\u0156\u014f\3"+
-		"\2\2\2\u0156\u0155\3\2\2\2\u0157-\3\2\2\2\u0158\u0159\b\30\1\2\u0159\u015a"+
-		"\5\62\32\2\u015a\u015b\5\60\31\2\u015b\u015c\b\30\1\2\u015c/\3\2\2\2\u015d"+
-		"\u015e\t\3\2\2\u015e\u015f\b\31\1\2\u015f\u0160\5\62\32\2\u0160\u0161"+
-		"\5\60\31\2\u0161\u0162\b\31\1\2\u0162\u0165\3\2\2\2\u0163\u0165\b\31\1"+
-		"\2\u0164\u015d\3\2\2\2\u0164\u0163\3\2\2\2\u0165\61\3\2\2\2\u0166\u0167"+
-		"\5\66\34\2\u0167\u0168\5\64\33\2\u0168\u0169\b\32\1\2\u0169\63\3\2\2\2"+
-		"\u016a\u016b\t\4\2\2\u016b\u016c\b\33\1\2\u016c\u016d\5\66\34\2\u016d"+
-		"\u016e\5\64\33\2\u016e\u016f\b\33\1\2\u016f\u0172\3\2\2\2\u0170\u0172"+
-		"\b\33\1\2\u0171\u016a\3\2\2\2\u0171\u0170\3\2\2\2\u0172\65\3\2\2\2\u0173"+
-		"\u0174\5:\36\2\u0174\u0175\58\35\2\u0175\u0176\b\34\1\2\u0176\67\3\2\2"+
-		"\2\u0177\u0178\t\5\2\2\u0178\u0179\b\35\1\2\u0179\u017a\5:\36\2\u017a"+
-		"\u017b\58\35\2\u017b\u017c\b\35\1\2\u017c\u017f\3\2\2\2\u017d\u017f\b"+
-		"\35\1\2\u017e\u0177\3\2\2\2\u017e\u017d\3\2\2\2\u017f9\3\2\2\2\u0180\u0181"+
-		"\5> \2\u0181\u0182\5<\37\2\u0182\u0183\b\36\1\2\u0183;\3\2\2\2\u0184\u0185"+
-		"\t\6\2\2\u0185\u0186\b\37\1\2\u0186\u0187\5> \2\u0187\u0188\5<\37\2\u0188"+
-		"\u0189\b\37\1\2\u0189\u018c\3\2\2\2\u018a\u018c\b\37\1\2\u018b\u0184\3"+
-		"\2\2\2\u018b\u018a\3\2\2\2\u018c=\3\2\2\2\u018d\u018e\t\7\2\2\u018e\u018f"+
-		"\b \1\2\u018f\u0190\5> \2\u0190\u0191\b \1\2\u0191\u0196\3\2\2\2\u0192"+
-		"\u0193\5@!\2\u0193\u0194\b \1\2\u0194\u0196\3\2\2\2\u0195\u018d\3\2\2"+
-		"\2\u0195\u0192\3\2\2\2\u0196?\3\2\2\2\u0197\u0198\b!\1\2\u0198\u0199\5"+
-		"D#\2\u0199\u019a\5B\"\2\u019a\u019b\b!\1\2\u019bA\3\2\2\2\u019c\u019d"+
-		"\7\f\2\2\u019d\u019e\b\"\1\2\u019e\u019f\5\"\22\2\u019f\u01a0\7\r\2\2"+
-		"\u01a0\u01a1\b\"\1\2\u01a1\u01a2\5B\"\2\u01a2\u01a3\b\"\1\2\u01a3\u01a6"+
-		"\3\2\2\2\u01a4\u01a6\b\"\1\2\u01a5\u019c\3\2\2\2\u01a5\u01a4\3\2\2\2\u01a6"+
-		"C\3\2\2\2\u01a7\u01a8\7(\2\2\u01a8\u01c9\b#\1\2\u01a9\u01aa\7)\2\2\u01aa"+
-		"\u01c9\b#\1\2\u01ab\u01ac\7*\2\2\u01ac\u01c9\b#\1\2\u01ad\u01ae\7,\2\2"+
-		"\u01ae\u01c9\b#\1\2\u01af\u01b0\7%\2\2\u01b0\u01b1\5\"\22\2\u01b1\u01b8"+
-		"\b#\1\2\u01b2\u01b3\7\t\2\2\u01b3\u01b4\5\"\22\2\u01b4\u01b5\b#\1\2\u01b5"+
-		"\u01b7\3\2\2\2\u01b6\u01b2\3\2\2\2\u01b7\u01ba\3\2\2\2\u01b8\u01b6\3\2"+
-		"\2\2\u01b8\u01b9\3\2\2\2\u01b9\u01bb\3\2\2\2\u01ba\u01b8\3\2\2\2\u01bb"+
-		"\u01bc\7&\2\2\u01bc\u01bd\b#\1\2\u01bd\u01c9\3\2\2\2\u01be\u01bf\7\'\2"+
-		"\2\u01bf\u01c0\7\b\2\2\u01c0\u01c1\7(\2\2\u01c1\u01c2\7\n\2\2\u01c2\u01c9"+
-		"\b#\1\2\u01c3\u01c4\7\b\2\2\u01c4\u01c5\5\"\22\2\u01c5\u01c6\7\n\2\2\u01c6"+
-		"\u01c7\b#\1\2\u01c7\u01c9\3\2\2\2\u01c8\u01a7\3\2\2\2\u01c8\u01a9\3\2"+
-		"\2\2\u01c8\u01ab\3\2\2\2\u01c8\u01ad\3\2\2\2\u01c8\u01af\3\2\2\2\u01c8"+
-		"\u01be\3\2\2\2\u01c8\u01c3\3\2\2\2\u01c9E\3\2\2\2\"IK[]sv\u0085\u0090"+
-		"\u0099\u009c\u00b5\u00be\u00d1\u00d3\u00e1\u00eb\u00f6\u00fb\u0107\u0115"+
-		"\u0118\u013c\u0149\u0156\u0164\u0171\u017e\u018b\u0195\u01a5\u01b8\u01c8";
+		"\5\u0084\n\5\f\5\16\5\u0087\13\5\3\5\3\5\3\6\3\6\3\6\3\6\3\6\3\6\7\6\u0091"+
+		"\n\6\f\6\16\6\u0094\13\6\3\6\3\6\3\6\3\6\3\6\3\6\3\6\7\6\u009d\n\6\f\6"+
+		"\16\6\u00a0\13\6\3\6\5\6\u00a3\n\6\3\7\3\7\3\7\3\7\3\7\3\7\3\7\3\7\3\b"+
+		"\3\b\3\b\3\b\3\b\3\b\3\b\3\b\3\b\3\b\3\b\3\b\3\b\7\b\u00ba\n\b\f\b\16"+
+		"\b\u00bd\13\b\3\b\3\b\3\b\3\b\3\b\3\b\5\b\u00c5\n\b\3\b\3\b\3\b\3\b\3"+
+		"\t\3\t\3\t\3\t\3\t\3\t\3\t\3\t\3\t\3\t\3\t\3\t\3\n\3\n\7\n\u00d9\n\n\f"+
+		"\n\16\n\u00dc\13\n\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3\13\3"+
+		"\13\5\13\u00e9\n\13\3\f\3\f\3\f\3\f\3\f\3\f\3\f\3\f\5\f\u00f3\n\f\3\f"+
+		"\3\f\3\f\3\f\3\f\3\f\3\f\3\f\3\f\5\f\u00fe\n\f\3\f\7\f\u0101\n\f\f\f\16"+
+		"\f\u0104\13\f\3\f\3\f\3\r\3\r\3\r\3\r\3\r\3\r\3\r\5\r\u010f\n\r\3\r\3"+
+		"\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\3\r\7\r\u011b\n\r\f\r\16\r\u011e\13\r\5"+
+		"\r\u0120\n\r\3\r\3\r\3\r\3\r\3\16\3\16\3\16\3\16\3\16\3\16\3\16\3\17\3"+
+		"\17\3\17\3\17\3\20\3\20\3\20\3\21\3\21\3\21\3\21\3\22\3\22\3\22\3\23\3"+
+		"\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\3\23\5\23\u0145\n\23\3\24\3\24"+
+		"\3\24\3\24\3\25\3\25\3\25\3\25\3\25\3\25\3\25\5\25\u0152\n\25\3\26\3\26"+
+		"\3\26\3\26\3\27\3\27\3\27\3\27\3\27\3\27\3\27\5\27\u015f\n\27\3\30\3\30"+
+		"\3\30\3\30\3\31\3\31\3\31\3\31\3\31\3\31\3\31\5\31\u016c\n\31\3\32\3\32"+
+		"\3\32\3\32\3\33\3\33\3\33\3\33\3\33\3\33\3\33\5\33\u0179\n\33\3\34\3\34"+
+		"\3\34\3\34\3\35\3\35\3\35\3\35\3\35\3\35\3\35\5\35\u0186\n\35\3\36\3\36"+
+		"\3\36\3\36\3\37\3\37\3\37\3\37\3\37\3\37\3\37\5\37\u0193\n\37\3 \3 \3"+
+		" \3 \3 \3 \3 \3 \5 \u019d\n \3!\3!\3!\3!\3!\3\"\3\"\3\"\3\"\3\"\3\"\3"+
+		"\"\3\"\3\"\5\"\u01ad\n\"\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#"+
+		"\7#\u01be\n#\f#\16#\u01c1\13#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\3#\5"+
+		"#\u01d0\n#\3#\2\2$\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60"+
+		"\62\64\668:<>@BD\2\b\3\3++\3\2\36\37\3\2\4\5\3\2 !\3\2\"#\4\2!!$$\2\u01dd"+
+		"\2F\3\2\2\2\4P\3\2\2\2\6d\3\2\2\2\b\177\3\2\2\2\n\u00a2\3\2\2\2\f\u00a4"+
+		"\3\2\2\2\16\u00ac\3\2\2\2\20\u00ca\3\2\2\2\22\u00da\3\2\2\2\24\u00e8\3"+
+		"\2\2\2\26\u00ea\3\2\2\2\30\u0107\3\2\2\2\32\u0125\3\2\2\2\34\u012c\3\2"+
+		"\2\2\36\u0130\3\2\2\2 \u0133\3\2\2\2\"\u0137\3\2\2\2$\u0144\3\2\2\2&\u0146"+
+		"\3\2\2\2(\u0151\3\2\2\2*\u0153\3\2\2\2,\u015e\3\2\2\2.\u0160\3\2\2\2\60"+
+		"\u016b\3\2\2\2\62\u016d\3\2\2\2\64\u0178\3\2\2\2\66\u017a\3\2\2\28\u0185"+
+		"\3\2\2\2:\u0187\3\2\2\2<\u0192\3\2\2\2>\u019c\3\2\2\2@\u019e\3\2\2\2B"+
+		"\u01ac\3\2\2\2D\u01cf\3\2\2\2FK\b\2\1\2GJ\5\4\3\2HJ\7+\2\2IG\3\2\2\2I"+
+		"H\3\2\2\2JM\3\2\2\2KI\3\2\2\2KL\3\2\2\2LN\3\2\2\2MK\3\2\2\2NO\b\2\1\2"+
+		"O\3\3\2\2\2PQ\7\3\2\2QR\7,\2\2RS\b\3\1\2ST\7\4\2\2TU\7(\2\2UV\b\3\1\2"+
+		"VW\7\5\2\2W]\7+\2\2X\\\5\b\5\2Y\\\5\6\4\2Z\\\7+\2\2[X\3\2\2\2[Y\3\2\2"+
+		"\2[Z\3\2\2\2\\_\3\2\2\2][\3\2\2\2]^\3\2\2\2^`\3\2\2\2_]\3\2\2\2`a\7\6"+
+		"\2\2ab\t\2\2\2bc\b\3\1\2c\5\3\2\2\2de\b\4\1\2ef\7\7\2\2fg\7,\2\2gh\b\4"+
+		"\1\2hv\7\b\2\2ij\5\n\6\2jk\7,\2\2ks\b\4\1\2lm\7\t\2\2mn\5\n\6\2no\7,\2"+
+		"\2op\b\4\1\2pr\3\2\2\2ql\3\2\2\2ru\3\2\2\2sq\3\2\2\2st\3\2\2\2tw\3\2\2"+
+		"\2us\3\2\2\2vi\3\2\2\2vw\3\2\2\2wx\3\2\2\2xy\7\n\2\2yz\7+\2\2z{\5\22\n"+
+		"\2{|\7\6\2\2|}\7+\2\2}~\b\4\1\2~\7\3\2\2\2\177\u0080\5\n\6\2\u0080\u0085"+
+		"\7,\2\2\u0081\u0082\7\t\2\2\u0082\u0084\7,\2\2\u0083\u0081\3\2\2\2\u0084"+
+		"\u0087\3\2\2\2\u0085\u0083\3\2\2\2\u0085\u0086\3\2\2\2\u0086\u0088\3\2"+
+		"\2\2\u0087\u0085\3\2\2\2\u0088\u0089\7+\2\2\u0089\t\3\2\2\2\u008a\u008b"+
+		"\7\13\2\2\u008b\u0092\b\6\1\2\u008c\u008d\7\f\2\2\u008d\u008e\7(\2\2\u008e"+
+		"\u008f\7\r\2\2\u008f\u0091\b\6\1\2\u0090\u008c\3\2\2\2\u0091\u0094\3\2"+
+		"\2\2\u0092\u0090\3\2\2\2\u0092\u0093\3\2\2\2\u0093\u0095\3\2\2\2\u0094"+
+		"\u0092\3\2\2\2\u0095\u00a3\b\6\1\2\u0096\u0097\7\16\2\2\u0097\u009e\b"+
+		"\6\1\2\u0098\u0099\7\f\2\2\u0099\u009a\7(\2\2\u009a\u009b\7\r\2\2\u009b"+
+		"\u009d\b\6\1\2\u009c\u0098\3\2\2\2\u009d\u00a0\3\2\2\2\u009e\u009c\3\2"+
+		"\2\2\u009e\u009f\3\2\2\2\u009f\u00a1\3\2\2\2\u00a0\u009e\3\2\2\2\u00a1"+
+		"\u00a3\b\6\1\2\u00a2\u008a\3\2\2\2\u00a2\u0096\3\2\2\2\u00a3\13\3\2\2"+
+		"\2\u00a4\u00a5\b\7\1\2\u00a5\u00a6\7\17\2\2\u00a6\u00a7\7+\2\2\u00a7\u00a8"+
+		"\5\22\n\2\u00a8\u00a9\7\6\2\2\u00a9\u00aa\7+\2\2\u00aa\u00ab\b\7\1\2\u00ab"+
+		"\r\3\2\2\2\u00ac\u00ad\7\20\2\2\u00ad\u00ae\5\"\22\2\u00ae\u00af\b\b\1"+
+		"\2\u00af\u00b0\7+\2\2\u00b0\u00b1\5\22\n\2\u00b1\u00bb\b\b\1\2\u00b2\u00b3"+
+		"\7\21\2\2\u00b3\u00b4\5\"\22\2\u00b4\u00b5\b\b\1\2\u00b5\u00b6\7+\2\2"+
+		"\u00b6\u00b7\5\22\n\2\u00b7\u00b8\b\b\1\2\u00b8\u00ba\3\2\2\2\u00b9\u00b2"+
+		"\3\2\2\2\u00ba\u00bd\3\2\2\2\u00bb\u00b9\3\2\2\2\u00bb\u00bc\3\2\2\2\u00bc"+
+		"\u00c4\3\2\2\2\u00bd\u00bb\3\2\2\2\u00be\u00bf\7\22\2\2\u00bf\u00c0\7"+
+		"+\2\2\u00c0\u00c1\b\b\1\2\u00c1\u00c2\5\22\n\2\u00c2\u00c3\b\b\1\2\u00c3"+
+		"\u00c5\3\2\2\2\u00c4\u00be\3\2\2\2\u00c4\u00c5\3\2\2\2\u00c5\u00c6\3\2"+
+		"\2\2\u00c6\u00c7\b\b\1\2\u00c7\u00c8\7\6\2\2\u00c8\u00c9\7+\2\2\u00c9"+
+		"\17\3\2\2\2\u00ca\u00cb\7\23\2\2\u00cb\u00cc\b\t\1\2\u00cc\u00cd\7,\2"+
+		"\2\u00cd\u00ce\7\24\2\2\u00ce\u00cf\5\"\22\2\u00cf\u00d0\b\t\1\2\u00d0"+
+		"\u00d1\7+\2\2\u00d1\u00d2\5\22\n\2\u00d2\u00d3\7\6\2\2\u00d3\u00d4\b\t"+
+		"\1\2\u00d4\u00d5\7+\2\2\u00d5\21\3\2\2\2\u00d6\u00d9\5\24\13\2\u00d7\u00d9"+
+		"\7+\2\2\u00d8\u00d6\3\2\2\2\u00d8\u00d7\3\2\2\2\u00d9\u00dc\3\2\2\2\u00da"+
+		"\u00d8\3\2\2\2\u00da\u00db\3\2\2\2\u00db\23\3\2\2\2\u00dc\u00da\3\2\2"+
+		"\2\u00dd\u00e9\5\26\f\2\u00de\u00df\5 \21\2\u00df\u00e0\b\13\1\2\u00e0"+
+		"\u00e9\3\2\2\2\u00e1\u00e9\5\20\t\2\u00e2\u00e9\5\16\b\2\u00e3\u00e9\5"+
+		"\34\17\2\u00e4\u00e9\5\36\20\2\u00e5\u00e9\5\30\r\2\u00e6\u00e9\5\32\16"+
+		"\2\u00e7\u00e9\5\f\7\2\u00e8\u00dd\3\2\2\2\u00e8\u00de\3\2\2\2\u00e8\u00e1"+
+		"\3\2\2\2\u00e8\u00e2\3\2\2\2\u00e8\u00e3\3\2\2\2\u00e8\u00e4\3\2\2\2\u00e8"+
+		"\u00e5\3\2\2\2\u00e8\u00e6\3\2\2\2\u00e8\u00e7\3\2\2\2\u00e9\25\3\2\2"+
+		"\2\u00ea\u00eb\5\n\6\2\u00eb\u00ec\7,\2\2\u00ec\u00f2\b\f\1\2\u00ed\u00ee"+
+		"\b\f\1\2\u00ee\u00ef\7\25\2\2\u00ef\u00f0\5\"\22\2\u00f0\u00f1\b\f\1\2"+
+		"\u00f1\u00f3\3\2\2\2\u00f2\u00ed\3\2\2\2\u00f2\u00f3\3\2\2\2\u00f3\u00f4"+
+		"\3\2\2\2\u00f4\u0102\b\f\1\2\u00f5\u00f6\7\t\2\2\u00f6\u00f7\7,\2\2\u00f7"+
+		"\u00fd\b\f\1\2\u00f8\u00f9\b\f\1\2\u00f9\u00fa\7\25\2\2\u00fa\u00fb\5"+
+		"\"\22\2\u00fb\u00fc\b\f\1\2\u00fc\u00fe\3\2\2\2\u00fd\u00f8\3\2\2\2\u00fd"+
+		"\u00fe\3\2\2\2\u00fe\u00ff\3\2\2\2\u00ff\u0101\b\f\1\2\u0100\u00f5\3\2"+
+		"\2\2\u0101\u0104\3\2\2\2\u0102\u0100\3\2\2\2\u0102\u0103\3\2\2\2\u0103"+
+		"\u0105\3\2\2\2\u0104\u0102\3\2\2\2\u0105\u0106\7+\2\2\u0106\27\3\2\2\2"+
+		"\u0107\u010e\b\r\1\2\u0108\u0109\7,\2\2\u0109\u010f\b\r\1\2\u010a\u010b"+
+		"\7\26\2\2\u010b\u010f\b\r\1\2\u010c\u010d\7\27\2\2\u010d\u010f\b\r\1\2"+
+		"\u010e\u0108\3\2\2\2\u010e\u010a\3\2\2\2\u010e\u010c\3\2\2\2\u010f\u0110"+
+		"\3\2\2\2\u0110\u0111\7\30\2\2\u0111\u0112\7,\2\2\u0112\u0113\7\b\2\2\u0113"+
+		"\u011f\b\r\1\2\u0114\u0115\5\"\22\2\u0115\u011c\b\r\1\2\u0116\u0117\7"+
+		"\t\2\2\u0117\u0118\5\"\22\2\u0118\u0119\b\r\1\2\u0119\u011b\3\2\2\2\u011a"+
+		"\u0116\3\2\2\2\u011b\u011e\3\2\2\2\u011c\u011a\3\2\2\2\u011c\u011d\3\2"+
+		"\2\2\u011d\u0120\3\2\2\2\u011e\u011c\3\2\2\2\u011f\u0114\3\2\2\2\u011f"+
+		"\u0120\3\2\2\2\u0120\u0121\3\2\2\2\u0121\u0122\7\n\2\2\u0122\u0123\b\r"+
+		"\1\2\u0123\u0124\7+\2\2\u0124\31\3\2\2\2\u0125\u0126\7\31\2\2\u0126\u0127"+
+		"\7\b\2\2\u0127\u0128\5\"\22\2\u0128\u0129\b\16\1\2\u0129\u012a\7\n\2\2"+
+		"\u012a\u012b\7+\2\2\u012b\33\3\2\2\2\u012c\u012d\7\32\2\2\u012d\u012e"+
+		"\b\17\1\2\u012e\u012f\7+\2\2\u012f\35\3\2\2\2\u0130\u0131\7\33\2\2\u0131"+
+		"\u0132\7+\2\2\u0132\37\3\2\2\2\u0133\u0134\5\"\22\2\u0134\u0135\7+\2\2"+
+		"\u0135\u0136\b\21\1\2\u0136!\3\2\2\2\u0137\u0138\5$\23\2\u0138\u0139\b"+
+		"\22\1\2\u0139#\3\2\2\2\u013a\u013b\b\23\1\2\u013b\u013c\5&\24\2\u013c"+
+		"\u013d\7\25\2\2\u013d\u013e\5$\23\2\u013e\u013f\b\23\1\2\u013f\u0145\3"+
+		"\2\2\2\u0140\u0141\b\23\1\2\u0141\u0142\5&\24\2\u0142\u0143\b\23\1\2\u0143"+
+		"\u0145\3\2\2\2\u0144\u013a\3\2\2\2\u0144\u0140\3\2\2\2\u0145%\3\2\2\2"+
+		"\u0146\u0147\5*\26\2\u0147\u0148\5(\25\2\u0148\u0149\b\24\1\2\u0149\'"+
+		"\3\2\2\2\u014a\u014b\7\34\2\2\u014b\u014c\b\25\1\2\u014c\u014d\5*\26\2"+
+		"\u014d\u014e\5(\25\2\u014e\u014f\b\25\1\2\u014f\u0152\3\2\2\2\u0150\u0152"+
+		"\b\25\1\2\u0151\u014a\3\2\2\2\u0151\u0150\3\2\2\2\u0152)\3\2\2\2\u0153"+
+		"\u0154\5.\30\2\u0154\u0155\5,\27\2\u0155\u0156\b\26\1\2\u0156+\3\2\2\2"+
+		"\u0157\u0158\7\35\2\2\u0158\u0159\b\27\1\2\u0159\u015a\5.\30\2\u015a\u015b"+
+		"\5,\27\2\u015b\u015c\b\27\1\2\u015c\u015f\3\2\2\2\u015d\u015f\b\27\1\2"+
+		"\u015e\u0157\3\2\2\2\u015e\u015d\3\2\2\2\u015f-\3\2\2\2\u0160\u0161\5"+
+		"\62\32\2\u0161\u0162\5\60\31\2\u0162\u0163\b\30\1\2\u0163/\3\2\2\2\u0164"+
+		"\u0165\t\3\2\2\u0165\u0166\b\31\1\2\u0166\u0167\5\62\32\2\u0167\u0168"+
+		"\5\60\31\2\u0168\u0169\b\31\1\2\u0169\u016c\3\2\2\2\u016a\u016c\b\31\1"+
+		"\2\u016b\u0164\3\2\2\2\u016b\u016a\3\2\2\2\u016c\61\3\2\2\2\u016d\u016e"+
+		"\5\66\34\2\u016e\u016f\5\64\33\2\u016f\u0170\b\32\1\2\u0170\63\3\2\2\2"+
+		"\u0171\u0172\t\4\2\2\u0172\u0173\b\33\1\2\u0173\u0174\5\66\34\2\u0174"+
+		"\u0175\5\64\33\2\u0175\u0176\b\33\1\2\u0176\u0179\3\2\2\2\u0177\u0179"+
+		"\b\33\1\2\u0178\u0171\3\2\2\2\u0178\u0177\3\2\2\2\u0179\65\3\2\2\2\u017a"+
+		"\u017b\5:\36\2\u017b\u017c\58\35\2\u017c\u017d\b\34\1\2\u017d\67\3\2\2"+
+		"\2\u017e\u017f\t\5\2\2\u017f\u0180\b\35\1\2\u0180\u0181\5:\36\2\u0181"+
+		"\u0182\58\35\2\u0182\u0183\b\35\1\2\u0183\u0186\3\2\2\2\u0184\u0186\b"+
+		"\35\1\2\u0185\u017e\3\2\2\2\u0185\u0184\3\2\2\2\u01869\3\2\2\2\u0187\u0188"+
+		"\5> \2\u0188\u0189\5<\37\2\u0189\u018a\b\36\1\2\u018a;\3\2\2\2\u018b\u018c"+
+		"\t\6\2\2\u018c\u018d\b\37\1\2\u018d\u018e\5> \2\u018e\u018f\5<\37\2\u018f"+
+		"\u0190\b\37\1\2\u0190\u0193\3\2\2\2\u0191\u0193\b\37\1\2\u0192\u018b\3"+
+		"\2\2\2\u0192\u0191\3\2\2\2\u0193=\3\2\2\2\u0194\u0195\t\7\2\2\u0195\u0196"+
+		"\b \1\2\u0196\u0197\5> \2\u0197\u0198\b \1\2\u0198\u019d\3\2\2\2\u0199"+
+		"\u019a\5@!\2\u019a\u019b\b \1\2\u019b\u019d\3\2\2\2\u019c\u0194\3\2\2"+
+		"\2\u019c\u0199\3\2\2\2\u019d?\3\2\2\2\u019e\u019f\b!\1\2\u019f\u01a0\5"+
+		"D#\2\u01a0\u01a1\5B\"\2\u01a1\u01a2\b!\1\2\u01a2A\3\2\2\2\u01a3\u01a4"+
+		"\7\f\2\2\u01a4\u01a5\b\"\1\2\u01a5\u01a6\5\"\22\2\u01a6\u01a7\7\r\2\2"+
+		"\u01a7\u01a8\b\"\1\2\u01a8\u01a9\5B\"\2\u01a9\u01aa\b\"\1\2\u01aa\u01ad"+
+		"\3\2\2\2\u01ab\u01ad\b\"\1\2\u01ac\u01a3\3\2\2\2\u01ac\u01ab\3\2\2\2\u01ad"+
+		"C\3\2\2\2\u01ae\u01af\7(\2\2\u01af\u01d0\b#\1\2\u01b0\u01b1\7)\2\2\u01b1"+
+		"\u01d0\b#\1\2\u01b2\u01b3\7*\2\2\u01b3\u01d0\b#\1\2\u01b4\u01b5\7,\2\2"+
+		"\u01b5\u01d0\b#\1\2\u01b6\u01b7\7%\2\2\u01b7\u01b8\5\"\22\2\u01b8\u01bf"+
+		"\b#\1\2\u01b9\u01ba\7\t\2\2\u01ba\u01bb\5\"\22\2\u01bb\u01bc\b#\1\2\u01bc"+
+		"\u01be\3\2\2\2\u01bd\u01b9\3\2\2\2\u01be\u01c1\3\2\2\2\u01bf\u01bd\3\2"+
+		"\2\2\u01bf\u01c0\3\2\2\2\u01c0\u01c2\3\2\2\2\u01c1\u01bf\3\2\2\2\u01c2"+
+		"\u01c3\7&\2\2\u01c3\u01c4\b#\1\2\u01c4\u01d0\3\2\2\2\u01c5\u01c6\7\'\2"+
+		"\2\u01c6\u01c7\7\b\2\2\u01c7\u01c8\7(\2\2\u01c8\u01c9\7\n\2\2\u01c9\u01d0"+
+		"\b#\1\2\u01ca\u01cb\7\b\2\2\u01cb\u01cc\5\"\22\2\u01cc\u01cd\7\n\2\2\u01cd"+
+		"\u01ce\b#\1\2\u01ce\u01d0\3\2\2\2\u01cf\u01ae\3\2\2\2\u01cf\u01b0\3\2"+
+		"\2\2\u01cf\u01b2\3\2\2\2\u01cf\u01b4\3\2\2\2\u01cf\u01b6\3\2\2\2\u01cf"+
+		"\u01c5\3\2\2\2\u01cf\u01ca\3\2\2\2\u01d0E\3\2\2\2\"IK[]sv\u0085\u0092"+
+		"\u009e\u00a2\u00bb\u00c4\u00d8\u00da\u00e8\u00f2\u00fd\u0102\u010e\u011c"+
+		"\u011f\u0144\u0151\u015e\u016b\u0178\u0185\u0192\u019c\u01ac\u01bf\u01cf";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

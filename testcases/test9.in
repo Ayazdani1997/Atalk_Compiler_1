@@ -1,10 +1,17 @@
 actor sadra<5>
 	receiver init()
-		begin
-			int a = 3
-			int b = 3 == a
-			write( { 'a' , 'b' } )
+		begin 
+			char[ 2 ][ 2 ][ 3 ] a = { { "ahy" , "tyh" } , { "hot" , "hoy" } }
+			write( a <> { { "ahy" , "tyh" } , { "hot" , "hoy" } } )
+			int b = 3 > 5 == 0 
 			write( b )
+			int[ 3 ][ 3 ] c = { { 2 , 3 , 5 } , { 4 , 2 , 3 } , { 3 , 5 , 6 } }
+			write( c == { { 2 , 3 , 5 } , { 4 , 2 , 3 } , { 3 , 5 , 6 } })
+			write( c[ 0 ][ 2 ] )
+			write( "over"[ 2 ] == 'e' )
 		end
+		int a = 2
+		write( a * 2 )
+		write( read( 5 )[ 2 ] )
 	end
 end

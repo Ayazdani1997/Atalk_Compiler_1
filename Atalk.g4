@@ -50,6 +50,7 @@ grammar Atalk;
 }
 program locals[int lastRepeatedVarNum , Stack <String> foreachCursor , Stack <String> foreachArray]:
 	{ 
+		Translator.mips = new Translator();
 		$program::lastRepeatedVarNum=0;
 		$foreachCursor = new Stack<String>();
 		$foreachArray = new Stack<String>();
@@ -104,7 +105,11 @@ actor returns[ActorSymbolTableItem asti] locals[int actorline]:
 			}
 			else $asti.setActorMailBoxSize($os.int);
 		}
-		'>' NL
+		'>'
+		{
+			Translator.mips.addNewActor( $op.text , $os.int );
+		} 
+		NL
 		(state | 
 		ot=receiver
 		{ 
@@ -121,6 +126,7 @@ actor returns[ActorSymbolTableItem asti] locals[int actorline]:
 				}
 				catch(ItemAlreadyExistsException ee){}
 			}
+			Translator.mips.addNewReceiver( $op.text , $ot.ctx.rsti.getKey() , $ot.ctx.rsti.getName() );
 			print("receiver <"+$ot.ctx.rsti.getKey()+">");
 		}
 		 | NL)*
@@ -191,7 +197,9 @@ receiver returns[ReceiverSymbolTableItem rsti] locals[int receiverline]:
 			{
 				SymbolTable.top.isInitReceiverScope=true;
 				SymbolTable.top.pre.actorSetHasInit();
+				$rsti.isInit = true;
 			}
+			SymbolTable.top.setkeyOfReceiverAccordingToReceiverST( $rsti.getKey() );
 			endScopeWithSameBaseForExitingReceiver( Register.GP , Register.TEMP9 , offset );
 		}
 	;
@@ -337,6 +345,7 @@ stm_foreach:
 		'foreach'
 		{
 			int offset = startScopeWithSameBase( Register.SP );
+			SymbolTable.top.setStackOffsetBeforeForeachST(offset);
 			SymbolTable.top.setInForeachST();
 		} 
 		op=ID 

@@ -152,13 +152,27 @@ public class SymbolTable  {
 		else
 			return true;
 	}
+	public String getkeyOfReceiverAccordingToReceiverST(){
+		return keyOfReceiverIfIsAnReceiverST;
+	}
+	public void setkeyOfReceiverAccordingToReceiverST(String s){
+		keyOfReceiverIfIsAnReceiverST=new String(s);
+	}
 	public String getkeyOfActorAccordingToActorST(){
 		return keyOfActorIfIsAnActorST;
 	}
 	public void setkeyOfActorAccordingToActorST(String s){
 		keyOfActorIfIsAnActorST=new String(s);
 	}
+	public void clearItems()
+	{
+		items = new HashMap<>();
+	}
 	private String keyOfActorIfIsAnActorST;
+	private String keyOfReceiverIfIsAnReceiverST;
+	private int StackOffsetBeforeForeachST;
+	public void setStackOffsetBeforeForeachST(int o){StackOffsetBeforeForeachST=o;}
+	public int getStackOffsetBeforeForeachST(){return StackOffsetBeforeForeachST;}
 	public boolean isInitReceiverScope;
 	SymbolTable pre;
 	HashMap<String, SymbolTableItem> items;

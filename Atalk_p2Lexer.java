@@ -90,15 +90,7 @@ public class Atalk_p2Lexer extends Lexer {
 		public void print(String n){
 			System.out.println(n);
 		}
-		Translator mips  = new Translator();
-		/*public boolean sizeConsistency( ArrayType t1 , ArrayType t2 )
-		{
-			if( t1.DimensionsCount() != t2.DimensionsCount() )
-				return false;
-			int size = t1.DimensionsCount();
-			for( int i = 0 ; i < size ; i++ )
-				if( t1.)
-		}*/
+		Translator mips  = Translator.mips;
 
 
 	public Atalk_p2Lexer(CharStream input) {

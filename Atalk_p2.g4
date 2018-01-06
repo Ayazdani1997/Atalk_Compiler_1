@@ -3,15 +3,7 @@ grammar Atalk_p2;
 	public void print(String n){
 		System.out.println(n);
 	}
-	Translator mips  = new Translator();
-	/*public boolean sizeConsistency( ArrayType t1 , ArrayType t2 )
-	{
-		if( t1.DimensionsCount() != t2.DimensionsCount() )
-			return false;
-		int size = t1.DimensionsCount();
-		for( int i = 0 ; i < size ; i++ )
-			if( t1.)
-	}*/
+	Translator mips  = Translator.mips;
 }
 program:
 	{ 
@@ -68,16 +60,46 @@ state:
 		(',' ot=ID )* NL
 	;
 
-type:
-		'char' 
-		('[' CONST_NUM ']')* 
-	|	'int'  
-		('[' CONST_NUM ']')* 
+type returns[ Type vartype ]:
+	'char'
+		{
+			$vartype=CharArrayType.getInstance();
+		} 
+		('[' CONST_NUM ']'
+		{
+			if($CONST_NUM.int>0) 
+				((CharArrayType) $vartype ).pushNewDimension($CONST_NUM.int);
+		}
+		)* 
+		{
+			if(( (CharArrayType) $vartype).DimensionsCount()==0) 
+				$vartype=CharType.getInstance();
+		}
+	|	'int' 
+		{
+			$vartype=IntArrayType.getInstance();
+		} 
+		('[' CONST_NUM ']'
+		{
+			if($CONST_NUM.int>0) 
+				((IntArrayType) $vartype ).pushNewDimension($CONST_NUM.int);
+		}
+		)* 
+		{
+			if(((IntArrayType)$vartype).DimensionsCount()==0) 
+				$vartype= IntType.getInstance();
+		}
 	;
 
 block: 
 		{
+			int SPoffset=SymbolTable.top.getOffset(Register.SP);
 			SymbolTable.push();
+			if(SymbolTable.top.getInForeachST())
+			{
+				SymbolTable.top.clearItems();
+				SymbolTable.top.setOffset(Register.SP,SPoffset);
+			}
 		}
 		'begin' 
 		NL
@@ -94,10 +116,18 @@ stm_if_elseif_else:
 		op='if' 
 		os=expr
 		{
-			SymbolTable.push();			
+			int SPoffset=SymbolTable.top.getOffset(Register.SP);
+			SymbolTable.push();	
+			if(SymbolTable.top.getInForeachST())
+			{
+				SymbolTable.top.clearItems();
+				SymbolTable.top.setOffset(Register.SP,SPoffset);
+			}
+			int falseIfLabelNum=Translator.mips.generate_if_stub($os.item);		
 		} 
 		NL statements 
 		{ 
+			int endIfLabelNum=Translator.mips.generate_if_skeleton(falseIfLabelNum);
 			SymbolTable.pop();	
 			if(!( $os.item.getVariable().getType() instanceof IntType || $os.item.getVariable().getType() instanceof NoType ) )
 				print("Error in line "+$op.line+" if expression must be integer");
@@ -109,9 +139,11 @@ stm_if_elseif_else:
 				SymbolTable.push();
 				if(!( $os.item.getVariable().getType() instanceof IntType || $os.item.getVariable().getType() instanceof NoType ) )
 					print("Error in line "+$opp.line+" if expression must be integer");
+				int falseElifLabelNum=Translator.mips.generate_elif_stub($ou.item);
 			} 
 			NL statements
 			{
+				Translator.mips.generate_elif_skeleton(falseElifLabelNum,endIfLabelNum);
 				SymbolTable.pop();
 			}
 		)*
@@ -126,13 +158,23 @@ stm_if_elseif_else:
 				SymbolTable.pop();	
 			}
 		)?
+		{
+			Translator.mips.generate_endif(endIfLabelNum);
+		}
 		'end' NL
 	;
 
 stm_foreach:
 		'foreach'
 		{
-			SymbolTable.push();			
+			boolean isOutterMostForeach=!SymbolTable.top.getInForeachST();
+			int SPoffset=SymbolTable.top.getOffset(Register.SP);
+			SymbolTable.push();
+			if(isOutterMostForeach)
+				SymbolTable.top.setOffset(Register.SP,SymbolTable.top.getStackOffsetBeforeForeachST());
+			else
+				SymbolTable.top.setOffset(Register.SP,SPoffset);
+			SymbolTable.top.clearItems();
 		} 
 		op=ID 
 		'in' os=expr
@@ -175,11 +217,14 @@ stm_foreach:
 				}
 				catch( ItemAlreadyExistsException ex ) {}
 			}
+			cursorItem.elementOffset=offset;
+			Translator.mips.generate_foreach_stub(cursorItem,$os.item);
 		}
 		NL
 			statements
 		'end'
 		{ 
+			Translator.mips.generate_foreach_skeleton(cursorItem,$os.item);
 			SymbolTable.pop();
 		} 
 		NL	
@@ -206,11 +251,19 @@ statement:
 	;
 
 stm_vardef:
-		type os=ID 
+		oh=type os=ID 
 		{
 			String name;
 			SymbolTableLocalVariableItem item;
 			name =  $os.text;
+			if(SymbolTable.top.getInForeachST())
+			{
+				try
+				{
+					SymbolTable.top.put(new SymbolTableLocalVariableItem(new Variable(name,$oh.vartype),SymbolTable.top.getOffset(Register.SP)));
+				}
+				catch( ItemAlreadyExistsException e ) {}
+			}
 			item = ( SymbolTableLocalVariableItem ) SymbolTable.top.getInCurrentScope( name );
 			mips.addCode( "addiu \$fp, \$sp, " + ( item.getOffset() + item.getVariable().size() ) + " #variable " + name + " declaration"  );
 		}
@@ -229,6 +282,14 @@ stm_vardef:
 		) ? { SymbolTable.define(); }  (',' ot=ID
 		{
 			name = $ot.text;
+			if(SymbolTable.top.getInForeachST())
+			{
+				try
+				{
+					SymbolTable.top.put(new SymbolTableLocalVariableItem(new Variable(name,$oh.vartype),SymbolTable.top.getOffset(Register.SP)));
+				}
+				catch( ItemAlreadyExistsException e ) {}
+			}
 			item = ( SymbolTableLocalVariableItem ) SymbolTable.top.getInCurrentScope( name );
 			mips.addCode( "addiu \$fp, \$sp, " + ( item.getOffset() + item.getVariable().size() ) + " #variable " + name + " declaration"  );
 		} 
@@ -248,11 +309,17 @@ stm_vardef:
 	;
 
 stm_tell:
-		{int destination;}(ot=ID{destination=1;} | 'sender'{destination=2;} | 'self'{destination=3;}) '<<' op=ID '('
+	{int destination;}(ot=ID{destination=1;} | 'sender'{destination=2;} | 'self'{destination=3;}) '<<' op=ID '('
 	{
 		ArrayList<SymbolTableTemporaryVariableItem> arguments=new ArrayList<>();	
 	}
-	 (om=expr{arguments.add($om.item);} (',' oj=expr{arguments.add($oj.item);})*)? ')'
+	 (om=expr{
+	 	arguments.add($om.item);
+	 } 
+	 (',' oj=expr
+	 	{
+	 		arguments.add($oj.item);
+	 	})*)? ')'
 	{
 		if(destination==1)
 		{
@@ -267,6 +334,14 @@ stm_tell:
 				ReceiverSymbolTableItem recItem=(ReceiverSymbolTableItem)item.getAccordingST().getInCurrentScope(key);
 				if(recItem==null)
 					print("Error in line "+$op.line+" there is not such receiver in actor '"+$ot.text+"'");
+				else{
+					SymbolTable toBeActorST=SymbolTable.top;
+					while(toBeActorST.pre.pre!=null)
+						toBeActorST=toBeActorST.pre;
+					String ActorName=((ActorSymbolTableItem)toBeActorST.pre.get(toBeActorST.getkeyOfActorAccordingToActorST())).getName();
+					Translator.mips.addReceiverCall(ActorName,$ot.text,key,arguments);
+				}
+			
 			}
 		}
 		else if(destination==3){
@@ -283,6 +358,7 @@ stm_tell:
 			ReceiverSymbolTableItem recItem=(ReceiverSymbolTableItem)temp.getInCurrentScope(key);
 			if(recItem==null)
 				print("Error in line "+$op.line+" there is not such receiver in actor '"+item.getName()+"'");
+			Translator.mips.addReceiverCall(item.getName(),item.getName(),key,arguments);
 		}
 		else if(destination==2){
 			if(SymbolTable.top.isInitReceiverScope)
@@ -309,6 +385,9 @@ stm_write:
 
 stm_quit:
 		op='quit'
+		{
+			mips.generateQuit();
+		}
 		NL
 	;
 
@@ -452,9 +531,6 @@ expr_and_tmp returns[SymbolTableTemporaryVariableItem item,int isThereANDoperato
 	;
 
 expr_eq returns[SymbolTableTemporaryVariableItem item]:
-		{
-			mips.addCode( "li \$s4, 1" );
-		}
 		ou=expr_cmp os=expr_eq_tmp
 		{	
 			if($os.isThereEQNEQoperator==0)
@@ -470,12 +546,15 @@ expr_eq returns[SymbolTableTemporaryVariableItem item]:
 					$item = new SymbolTableTemporaryVariableItem( new Variable( "temp" , NoType.getInstance() ) , 0 );
 				else
 						$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				mips.generateCodeForEquality( $os.eqoperator , $ou.item , $os.isFirstLValue  );
+				mips.generateCodeForEqualityOrCompare( "==" , $ou.item , $os.isFirstLValue  );
+				if( $os.eqoperator.equals( "<>" ) )
+					mips.addCode( "xori \$s4, \$s4, 1" );
 				mips.addCode( "sw \$s4, 0(\$t6)" );
 				mips.addCode( "addiu \$fp, \$fp, -4" );
 				mips.addCode( "sw \$t6, 0(\$fp)" );
 				mips.addCode( "addiu \$fp, \$fp, 4" );
 				mips.addCode( "addiu \$t6, \$t6, -4" );
+				mips.addCode( "#end of equality" );
 			}
 		}
 	;
@@ -498,11 +577,14 @@ expr_eq_tmp returns[SymbolTableTemporaryVariableItem item,int isThereEQNEQoperat
 					$item = new SymbolTableTemporaryVariableItem( new Variable( "temp" , NoType.getInstance() ) , 0 );
 				else
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				mips.generateCodeForEquality( $os.eqoperator , $ou.item , $os.isFirstLValue  );	
+				mips.generateCodeForEqualityOrCompare( "==" , $ou.item , $os.isFirstLValue  );
+				if( $os.eqoperator.equals( "<>" ) )
+					mips.addCode( "xori \$s4, \$s4, 1" );	
 			}
 		}
 	|
 	{
+		mips.addCode( "li \$s4, 1 #equality started" );
 		$isThereEQNEQoperator=0;
 		$item=null;
 	}
@@ -520,15 +602,22 @@ expr_cmp returns[SymbolTableTemporaryVariableItem item]:
 					print( "Error in line " + $os.compLine + " operands for comparision must be integers" );
 				else
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				mips.operationCommand( $os.compoperator );
+				mips.generateCodeForEqualityOrCompare( $os.compoperator , $ou.item , $os.isFirstLValue );
+				mips.addCode( "sw \$s4, 0(\$t6)" );
+				mips.addCode( "addiu \$fp, \$fp, -4" );
+				mips.addCode( "sw \$t6, 0(\$fp)" );
+				mips.addCode( "addiu \$fp, \$fp, 4" );
+				mips.addCode( "addiu \$t6, \$t6, -4" );
+				mips.addCode( "#end of compare" );
 			}
 		}
 	;
 
-expr_cmp_tmp returns[SymbolTableTemporaryVariableItem item,int isThereCMPoperator , int compLine , String compoperator ]:
+expr_cmp_tmp returns[SymbolTableTemporaryVariableItem item,int isThereCMPoperator , int compLine , String compoperator , int isFirstLValue ]:
 		op=('<' | '>'){$isThereCMPoperator=1; $expr_assign::couldBeAssigned=0; $compLine = $op.line ; $compoperator = $op.text; } 
 		ou=expr_add os=expr_cmp_tmp
 		{
+			$isFirstLValue = $ou.item.isLValue;
 			if($os.isThereCMPoperator==0)
 			{
 				if($ou.item.getVariable().getType() instanceof ArrayType ||$ou.item.getVariable().getType() instanceof CharType){
@@ -549,10 +638,12 @@ expr_cmp_tmp returns[SymbolTableTemporaryVariableItem item,int isThereCMPoperato
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",NoType.getInstance()),0);
 				else
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
-				mips.operationCommand( $os.compoperator );
+				//mips.operationCommand( $os.compoperator );
+				mips.generateCodeForEqualityOrCompare( $os.compoperator , $ou.item , $os.isFirstLValue );
 			}
 		}
 	|{
+		mips.addCode( "li \$s4, 1 #compare started");
 		$isThereCMPoperator=0;
 		$item=null;
 	}
@@ -655,7 +746,7 @@ expr_mult_tmp returns[SymbolTableTemporaryVariableItem item,int isThereMDoperato
 						$item=new SymbolTableTemporaryVariableItem(new Variable("temp",IntType.getInstance()),0);
 				else
 				{
-					print( "Error in Line : " + $op.line + " the operands must be integers" );
+					print( "Error in Line " + $op.line + ":the operands must be integers" );
 					$item=new SymbolTableTemporaryVariableItem(new Variable("temp",NoType.getInstance()),0);
 				}
 				mips.operationCommand( $os.multoperator );
@@ -834,21 +925,16 @@ expr_other returns[ SymbolTableTemporaryVariableItem item , String name ]:
 		{
 			if( !( $or.item.getVariable().getType() instanceof NoType ) && !inconsistencyFlag )
 			{
-				if( $or.item.getVariable().getType() instanceof ArrayType )
-					( (ArrayType) $item.getVariable().getType() ).pushNewDimensionToFirst(dimen);
-				else
-				{
-					if( $or.item.getVariable().getType() instanceof IntType )
-						$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new IntArrayType() ) ,0 );
-					else
-						$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new CharArrayType() ) ,0 );
-					( (ArrayType) $item.getVariable().getType() ).pushNewDimensionToFirst( dimen );
-				}
+				mips.generateCodeForRecord( recordList );
+				if( $or.item.getVariable().getType() instanceof IntType )
+					$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new IntArrayType() ) ,0 );
+				else if( $or.item.getVariable().getType() instanceof CharType )
+					$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", new CharArrayType() ) ,0 );
+				( (ArrayType) $item.getVariable().getType() ).pushNewDimensionToFirst( dimen );
 				$item.isLValue = 0;
 			}
 			else
 				$item = new SymbolTableTemporaryVariableItem(new Variable("temp_curly", NoType.getInstance() ) ,0 );
-			mips.generateCodeForRecord( recordList );
 		}
 	|	ow='read' '(' CONST_NUM ')'
 		{

@@ -7,10 +7,12 @@ import java.io.*;
 
 public class Translator 
 {
+    public static Translator mips;
     private int labelNum;
     private int receiverNum;
     private Hashtable<String,Integer> actorsMemoryAddresses;
     private Hashtable<String,Hashtable<String,Integer>> receiverNumbers;
+    private Hashtable<Integer, String> receiverNames;
     private File output;
     private ArrayList <String> instructions;
     private ArrayList <String> initInstructions;
@@ -36,6 +38,7 @@ public class Translator
 	    receiverNumbers=new Hashtable<>();// String:actor name
         instructions = new ArrayList<String>();
         initInstructions = new ArrayList<String>();
+        receiverNames = new Hashtable<>();
 	    t1offset=0;
 
         output = new File("out.asm");
@@ -63,88 +66,183 @@ public class Translator
     |     number of receiver     | }
     */
 
-    public void addActor(String name,int mailboxSize){
-        actorsMemoryAddresses.put(name,t1offset);
-        receiverNumbers.put(name,new Hashtable<>());
-            initInstructions.add("# adding an actor");
+     public void addActor(String name,int mailboxSize){
+        
+        initInstructions.add("# adding an actor");
         if(SymbolTable.top.actorHasInit()){
             initInstructions.add("li $a0, " + (mailboxSize-1));//because of init msg
             initedActorsCount++;
         }
         else
             initInstructions.add("li $a0, " + mailboxSize);     
-            initInstructions.add("sw $a0, " + t1offset + "($t1)");
-        t1offset+=4;
+            initInstructions.add("sw $a0, " + actorsMemoryAddresses.get(name) + "($t1)");
             initInstructions.add("move $t3,$t1");
-            initInstructions.add("addi $t3,$t3, "+(t1offset+8));
-            initInstructions.add("sw $t3, "+t1offset+"($t1)");//read pointer tanzim mishavad
-        t1offset+=4;
+            initInstructions.add("addi $t3,$t3, "+(actorsMemoryAddresses.get(name)+12));
+            initInstructions.add("sw $t3, "+(actorsMemoryAddresses.get(name)+4)+"($t1)");//read pointer tanzim mishavad
             if( !SymbolTable.top.actorHasInit() || mailboxSize==1){
                 initInstructions.add("move $t3,$t1");
-                initInstructions.add("addi $t3,$t3, "+(t1offset+4));
-                initInstructions.add("sw $t3, "+t1offset+"($t1)");//write pointer tanzim mishavad
+                initInstructions.add("addi $t3,$t3, "+(actorsMemoryAddresses.get(name)+12));
+                initInstructions.add("sw $t3, "+(actorsMemoryAddresses.get(name)+8)+"($t1)");//write pointer tanzim mishavad
         }else{
                 initInstructions.add("move $t3,$t1");
-                initInstructions.add("addi $t3,$t3, "+(t1offset+20));
-                initInstructions.add("sw $t3, "+t1offset+"($t1)");//write pointer tanzim mishavad
+                initInstructions.add("addi $t3,$t3, "+(actorsMemoryAddresses.get(name)+28));
+                initInstructions.add("sw $t3, "+(actorsMemoryAddresses.get(name)+8)+"($t1)");//write pointer tanzim mishavad
         }
-        t1offset+=4;
-        t1offset+=mailboxSize*16;
+        initInstructions.add("#actor added");
     }
-    public void addReceiver(String name)
+    public void addNewActor(String name,int mailboxsize){
+        actorsMemoryAddresses.put(name,t1offset);
+        receiverNumbers.put(name,new Hashtable<>());
+        t1offset+=12;
+        t1offset+=mailboxsize*16;
+    }
+    public void addNewReceiver(String aname,String rkey,String rname){
+            receiverNumbers.get(aname).put(rkey,receiverNum);
+            receiverNames.put(receiverNum,rname);
+            receiverNum++;
+    }
+    public void addReceiver(String aname,String rkey,boolean isInit){
+
+        if(isInit){//putting init message
+            initInstructions.add("#putting init message in actor "+aname+"mailbox");
+            initInstructions.add("li $t3, "+actorsMemoryAddresses.get(aname));
+            initInstructions.add("add $t3 ,$t3,$t1");
+            initInstructions.add("sw $zero , 20($t3)");
+            initInstructions.add("li $t5, "+receiverNumbers.get(aname).get(rkey));
+            initInstructions.add("sw $t5 , 24($t3)");
+            initInstructions.add("#init message put");
+        }
+
+    }
+	public void generateReceiverStub(String name,String key)
     {
         String actorName=((ActorSymbolTableItem)SymbolTable.top.pre.pre.getInCurrentScope(SymbolTable.top.pre.getkeyOfActorAccordingToActorST())).getName();
-        receiverNumbers.get(actorName).put(name,receiverNum);
-        instructions.add(name+receiverNum+":");
-        if(SymbolTable.top.isInitReceiverScope){//putting init message
-            initInstructions.add("li $t3, "+actorsMemoryAddresses.get(actorName)+"($t1)");
-            initInstructions.add("sw $zero , 20($t3)");
-            initInstructions.add("li $t5, "+receiverNum);
-            initInstructions.add("sw $t5 , 24($t3)");
-        }
-        receiverNum++;
+        instructions.add(name+receiverNumbers.get(actorName).get(key)+":");
     }
-	public void addReceiverSkeleton(){
-		initInstructions.add("jr $ra");
-	}
+    public void addReceiverSkeleton(){
+        instructions.add("jr $ra");
+        instructions.add("#receiver added");
+    }
     public void makeOutput(){
-            //this.addSystemCall(10);
-            try {
-                PrintWriter writer = new PrintWriter(output);
-                //writer.println("invalidmsgmsg : "+".asciiz \"InvalidMessageError\"");
-                //writer.println("actorMBfullmsg : "+".asciiz \"ActorBufferOverflowError\"");
-                writer.println("main:");
-                writer.println( "li $sp, " + stackstart );
-                writer.println( "li $t6, " + rvalueStackStart);
-        	    writer.println( "li $t1, " + actorSegmentStart );
-        	    writer.println( "li $t2, " + heapstart );
-        	    writer.println( "li $t9, " + argumentStart );
-        	    writer.println( "li $gp, " + dataSegmentStart ); 
-                writer.println( "li $t8 , " + initedActorsCount);
-                writer.println("move $fp, $sp");
-                for (int i=0;i<initInstructions.size();i++){
-                    writer.println(initInstructions.get(i));
-                }
-
-    		   //makeSuperWhile();
-
-    		   //messagePicker();
-                for (int i=0;i<instructions.size();i++){
-                    writer.println(instructions.get(i));
-                }
-                writer.println("programcomplete:");
-                addSystemCall(10);//Exit program
-                writer.close();
-            } catch (Exception e) { e.printStackTrace(); }
+        //this.addSystemCall(10);
+        try {
+            PrintWriter writer = new PrintWriter(output);
+            //writer.println("invalidmsgmsg : "+".asciiz \"InvalidMessageError\"");
+            //writer.println("actorMBfullmsg : "+".asciiz \"ActorBufferOverflowError\"");
+            //writer.println( "indexOutOfRange : " + " .asciiz \"indexOutOfRangeException\"" );
+            writer.println("main:");
+            writer.println( "li $sp, " + stackstart );
+            writer.println( "li $t6, " + rvalueStackStart);
+    	    writer.println( "li $t1, " + actorSegmentStart );
+    	    writer.println( "li $t2, " + heapstart );
+    	    writer.println( "li $t9, " + argumentStart );
+    	    writer.println( "li $gp, " + dataSegmentStart ); 
+            writer.println( "li $t8 , " + initedActorsCount);
+            writer.println("move $fp, $sp");
+            for (int i=0;i<initInstructions.size();i++){
+                writer.println(initInstructions.get(i));
+            }
+            writer.println( "j superwhile" );
+		    makeSuperWhile();
+		    messagePicker();
+            for (int i=0;i<instructions.size();i++){
+                writer.println(instructions.get(i));
+            }
+            writer.println("programcomplete:");
+            writer.println( "li $v0, 10" );
+            writer.println( "syscall" );
+            writer.close();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+    public void copyArgToHeap(SymbolTableTemporaryVariableItem arg , int argNumber , int argsCount )
+    {
+        instructions.add("#copying an argument");
+        instructions.add( "addiu $t5, $fp, " + ( -( argNumber - 1 - argsCount ) * Type.WORD_BYTES ) );
+        instructions.add("li $t3, 0");
+        instructions.add("li $t4, " + arg.getVariable().getType().size() / Type.WORD_BYTES );
+        instructions.add("copyloop" + labelNum + " :");
+        instructions.add("beq $t4,$t3 , copyfinished"+(labelNum+1));
+        instructions.add("lw $t7, 0($t5)");//value to copy
+        instructions.add("sw $t7, 0($t2)");//value has just been copied
+        instructions.add("addi $t2,$t2,4");//incrementing heap pointer by 4
+        if(arg.isLValue==1)//going to next address to be copied
+            instructions.add("addiu $t5,$t5,-4");
+        else
+            instructions.add("addi $t5,$t5,4");
+        instructions.add("addi $t3,$t3,1");
+        instructions.add("j copyloop"+labelNum);
+        labelNum++;
+        instructions.add("copyfinished"+labelNum+" :");
+        instructions.add("#copying end");
+        labelNum++;
+        instructions.add("# pop stack");
+        instructions.add("addiu $fp, $fp, -4");
+        instructions.add("# end of pop stack");
+    }
+    public void addReceiverCall(String callerActorName,String calleeActorName,String receiverkey,ArrayList<SymbolTableTemporaryVariableItem> arguments){
+        instructions.add("#sending a message");
+        instructions.add("lw $t3, "+actorsMemoryAddresses.get(calleeActorName)+"($t1)");
+        instructions.add("bne $t3, $zero , "+calleeActorName+"notfullmailboxbranchlabel"+labelNum);
+        instructions.add("la $a0 , actorMBfullmsg");
+        addSystemCall(4);
+        instructions.add("j endcall"+(labelNum+1));
+        instructions.add(calleeActorName+"notfullmailboxbranchlabel"+labelNum+" :");
+        labelNum++;
+        //call code
+        instructions.add("lw $t3, "+actorsMemoryAddresses.get(calleeActorName)+"($t1)");//zarfiate fe'eli load mishavad
+        instructions.add("addiu $t3 ,$t/3, -1");
+        instructions.add("sw $t3, "+actorsMemoryAddresses.get(calleeActorName)+"($t1)");//zarfiat yeki kam mishavad
+        instructions.add("addi $t8,$t8,1");//te'edade kolle payamha yeki ziad mishavad
+        instructions.add("lw $t5, "+(actorsMemoryAddresses.get(calleeActorName)+8)+"($t1)");//$t5 <- write pointer
+        instructions.add("li $t3, "+actorsMemoryAddresses.get(callerActorName));
+        instructions.add("sw $t3, 0($t5)");//putting sender address(offset from $t1) to slot
+        instructions.add("sw $t2, 4($t5)");//putting addr of first argument( it is heap pointer)
+        instructions.add("li $t3, "+arguments.size());
+        instructions.add("sw $t3, 8($t5)");//putting count of arguments
+        instructions.add("li $t3, "+receiverNumbers.get(calleeActorName).get(receiverkey));
+        instructions.add("sw $t3, 12($t5)");//putting number of receiver
+        //fulfilling the heap and incrementing the heap pointer 
+        for(int i = 0 ; i < arguments.size() ; i++ ){
+            copyArgToHeap( arguments.get( i ) , i + 1 , arguments.size() );
+        }
+        //end
+        //modifying  write pointer
+        instructions.add("lw $t5, "+(actorsMemoryAddresses.get(calleeActorName)+8)+"($t1)");//$t5 <- write pointer
+        instructions.add("addi $t5,$t5,16");
+        instructions.add("li $t3,16");
+        SymbolTable actorST=SymbolTable.top;
+        while(actorST.pre.pre!=null)
+            actorST=actorST.pre;
+        instructions.add("li $t7, "+((ActorSymbolTableItem)actorST.pre.get("actor_"+calleeActorName)).getActorMailBoxSize());//$t7<- zarfiate kolle mailboxe callee
+        instructions.add("multu $t3,$t7");
+        instructions.add("mflo $t3");
+        instructions.add("li $t7 ,"+actorsMemoryAddresses.get(calleeActorName));
+        instructions.add("add $t7,$t7,$t1");//$t7<- absolute addr of callee actor memory
+        instructions.add("add $t3,$t3,$t7");
+        instructions.add("addi $t3,$t3,12");
+        //instructions.add("remu $a3,$a3,$t3");
+        //instructions.add("beq $a3,$zero, "+"pointermending"+labelNum);
+        instructions.add("beq $t5,$t3, pointermending"+(labelNum+1));
+        instructions.add("sw $t5, "+(actorsMemoryAddresses.get(calleeActorName)+8)+"($t1)");//write pointer miravad roo slote baadi
+        instructions.add("j pointermended"+(labelNum+2));
+        instructions.add("pointermending"+(labelNum+1)+" :");
+        instructions.add("li $t5, "+(actorsMemoryAddresses.get(calleeActorName)+12));
+        instructions.add("add $t5,$t5,$t1");
+        instructions.add("sw $t5, "+(actorsMemoryAddresses.get(calleeActorName)+8)+"($t1)");//write pointer miravad roo slote baadi (ya een ejra mishavad ya balaii)
+        instructions.add("pointermended"+(labelNum+2)+" :");
+        instructions.add("endcall"+labelNum+" :");
+        labelNum+=3;
     }
     public void messagePicker(){//$a0 <- absolute address of the actor data segment , $a1 <- actor mailbox size
+        instructions.add("#start of messagepicker");
         instructions.add("messagepicker:");
-        instructions.add("bne $a1,$a0, hasmessage"+labelNum);
+        instructions.add("lw $t3, 0($a0)");
+        instructions.add("bne $a1,$t3, hasmessage"+labelNum);
         instructions.add("jr $ra");
         instructions.add("hasmessage"+labelNum+" :");
         labelNum++;
         instructions.add("lw $a2, 0($a0)");//
-        instructions.add("addiu $a2,$a2,-1");//zarfiate queue yeki kam mishe
+        instructions.add("addi $a2,$a2,1");//zarfiate queue yeki ziad mishe
         instructions.add("sw $a2, 0($a0)");//
         instructions.add("addiu $t8,$t8,-1");//te'edade kolle payam ha yeki kam mishe
         instructions.add("lw $a2, 4($a0)");//$a2<-absolute addresse oon sloti ke payami ke bayad bekhonim tooshe
@@ -154,9 +252,10 @@ public class Translator
         instructions.add("multu $t3,$a1");
         instructions.add("mflo $t3");
         instructions.add("add $t3,$t3,$a0");
-        instructions.add("addi $t3,$t3,8");
-        instructions.add("remu $a3,$a3,$t3");
-        instructions.add("beq $a3,$zero, "+"pointermending"+labelNum);
+        instructions.add("addi $t3,$t3,12");
+        //instructions.add("remu $a3,$a3,$t3");
+        //instructions.add("beq $a3,$zero, "+"pointermending"+labelNum);
+        instructions.add("beq $a3,$t3, pointermending"+labelNum);
         instructions.add("sw $a3,4($a0)");//read pointer miravad roo slote baadi
         instructions.add("j pointermended"+(labelNum+1));
         instructions.add("pointermending"+labelNum+" :");
@@ -164,50 +263,106 @@ public class Translator
         instructions.add("addi $a3,$a0,12");
         instructions.add("sw $a3,4($a0)");//read pointer miravad roo slote baadi (ya een ejra mishavad ya balaii)
         instructions.add("pointermended"+labelNum+" :");
+        labelNum++;
         instructions.add("addi $t3,$a2,12");
         instructions.add("lw $t3, 0($t3)");//$t3 <- shomare receiveri ke bayad be kode an beparim.
-        String aName,rName;
+        String aName,rkey;
         Enumeration aNames= actorsMemoryAddresses.keys();
-        Enumeration rNames;
+        Enumeration rkeys;
         while(aNames.hasMoreElements()){
-          aName=(String) aNames.nextElement();
+            aName=(String) aNames.nextElement();
             instructions.add("li $t5, "+actorsMemoryAddresses.get(aName));
-             instructions.add("add $t5,$t5,$t1");
+            instructions.add("add $t5,$t5,$t1");
             instructions.add("bne $t5,$a0, not"+labelNum+aName);
-             rNames=receiverNumbers.get(aName).keys();
-             while(rNames.hasMoreElements()){
-              rName=(String) rNames.nextElement();
-             instructions.add("li $t7, "+receiverNumbers.get(aName).get(rName));
-              instructions.add("beq $t7,$t3 , "+rName+receiverNumbers.get(aName).get(rName));
+            rkeys=receiverNumbers.get(aName).keys();
+            while(rkeys.hasMoreElements()){
+                rkey=(String) rkeys.nextElement();
+                instructions.add("li $t7, "+receiverNumbers.get(aName).get(rkey));
+                instructions.add("beq $t7,$t3 , "+receiverNames.get(receiverNumbers.get(aName).get(rkey))+receiverNumbers.get(aName).get(rkey));
             }
-        //agar hameye beq ha ra rad konad che?
+            //agar hameye beq ha ra rad konad che?
             instructions.add("not"+labelNum+aName+":");
             labelNum++;
         }
-    //  vaziiate ajib .adade receiver male hichkodam az actor ha naboode che konim? 
+        instructions.add("#end of messagepicker");
+        //  vaziiate ajib .adade receiver male hichkodam az actor ha naboode che konim? 
     }
-    /*public void addRvalueToStack(int x){
-        instructions.add("# adding a number to stack");
-        instructions.add("li $a0, " + x );
-        instructions.add("sw $a0, 0($fp)");
-        instructions.add("addi $fp, $fp, 4");
-        instructions.add("# end of adding a number to stack");
-
-    }*/
     public void makeSuperWhile(){
-        instructions.add("superwhile"+labelNum+" :");
+        instructions.add("#start of superwhile");
+        instructions.add("superwhile :");
         instructions.add("beq $t8,$zero, programcomplete");
         Enumeration actornames = actorsMemoryAddresses.keys();
         String str;
         while(actornames.hasMoreElements()) {
-                str = (String) actornames.nextElement();
+            str = (String) actornames.nextElement();
             instructions.add("li $a1, "+((ActorSymbolTableItem)SymbolTable.top.get("actor_"+str)).getActorMailBoxSize());
             instructions.add("li $a0, "+actorsMemoryAddresses.get(str));
             instructions.add("add $a0,$a0,$t1");
             instructions.add("jal messagepicker");
-            }
-        instructions.add("j superwhile"+labelNum);
+        }
+        instructions.add("j superwhile");
+        instructions.add("#end of superwhile");
         labelNum++;
+    }
+    public void generateQuit(){
+        instructions.add("jr $ra");
+    }
+    public int generate_if_stub(SymbolTableTemporaryVariableItem item){
+        instructions.add("lw $t5, -4($fp)");
+        instructions.add("lw $t5, 0($t5)");
+        instructions.add("beq $t5,$zero ,falseif"+labelNum);
+        labelNum++;
+        return labelNum-1;
+    }
+    public int generate_if_skeleton(int falseifLabelNum){
+        instructions.add("j endif"+labelNum);
+        labelNum++;
+        instructions.add("falseif"+falseifLabelNum+" :");
+        return labelNum-1;
+    }
+    public int generate_elif_stub(SymbolTableTemporaryVariableItem item){
+        instructions.add("lw $t5, -4($fp)");
+        instructions.add("lw $t5, 0($t5)");
+        instructions.add("beq $t5 ,$zero, falseelif"+labelNum);
+        labelNum++;
+        return labelNum-1;
+    }
+    public void generate_elif_skeleton(int falseelifLabelNum,int endifLabelNum){
+        instructions.add("j endif"+endifLabelNum);
+        instructions.add("falseelif"+falseelifLabelNum+" :");
+    }
+    public void generate_endif(int endifLabelNum){
+        instructions.add("endif"+endifLabelNum+" :");
+    }
+    public void generate_foreach_stub(SymbolTableCursorItem cursor,SymbolTableTemporaryVariableItem cursed){
+        instructions.add("#start OF foreach");
+        instructions.add("lw $t5, -4($fp)");//$t5 <- address of cursed
+        instructions.add("addiu $fp , $sp, "+cursor.elementOffset+cursor.getVariable().getType().size()); 
+        int step=((ArrayType)cursed.getVariable().getType()).getDimensionByteCount(1);
+        instructions.add("li $t3, 0");//$t3 <- current index of array
+        instructions.add("li $t4, "+((ArrayType)cursed.getVariable().getType()).getDimensionSize(0));
+        instructions.add("foreachloop"+labelNum+":");
+        instructions.add("beq $t3,$t4, foreachend"+(labelNum+1));
+        cursor.foreachloopLabelNum=labelNum;
+        cursor.foreachendLabelNum=labelNum+1;
+        labelNum+=2;
+    }
+    public void generate_foreach_skeleton(SymbolTableCursorItem cursor,SymbolTableVariableItemBase cursed){
+            instructions.add("lw $t3, "+cursor.elementOffset+"($sp)");
+            instructions.add("addi $t3,$t3 ,1");
+            int step=((ArrayType)cursed.getVariable().getType()).getDimensionByteCount(1);
+            instructions.add("sw $t3, "+cursor.elementOffset+"($sp)");
+            instructions.add("lw $t5, "+cursed.getOffset()+"($sp)");
+            instructions.add("addi $t5,$t5 , "+step);
+            instructions.add("sw $t5 "+cursed.getOffset()+"($sp)");
+            instructions.add("li $t4, "+((ArrayType)cursed.getVariable().getType()).getDimensionSize(0));
+            instructions.add("j foreachloop"+cursor.foreachloopLabelNum);
+            instructions.add("foreachend"+cursor.foreachendLabelNum+":");
+            popStack();//pop cursor index
+            if(cursor.getVariable().getType() instanceof IntType || cursor.getVariable().getType() instanceof CharType )
+            popStack();
+            else
+            instructions.add("addiu $fp, $fp, -"+((int)(((ArrayType)cursor.getVariable().getType()).getDimensionByteCount(((ArrayType)cursor.getVariable().getType()).DimensionsCount())/4)));
     }
     public void generateCodeForAssignment( int size , int isRightHandLvalue )
     {
@@ -236,9 +391,6 @@ public class Translator
     }
     public void addLvalueAddressToStack( String name , Register base , int adr )
     {
-//      System.out.println( "pushing to stack");
-//      int adr = table.getAddress(s)*(-1);
-        //int size = item.getVariable().size();
         instructions.add("# start of adding variable " + name + " to stack");
         instructions.add("addiu $a0, " + base.toString() + ", " + adr );
         instructions.add("sw $a0, 0($fp)");
@@ -275,12 +427,17 @@ public class Translator
     	instructions.add( "sw $a0, 0($fp)");
     	instructions.add( "addiu $fp, $fp, 4");
     }    
+    public void IndexOutOfRangeDetector()
+    {
+        instructions.add( "#indexOutOfRangeDetection" );
+        instructions.add( "blt $r0, $a0, CONTINUE" + ( labelNum + 1 ) );
+        //instructions.add( "");
+    }
     public void generateAccessCode( int size , SymbolTableTemporaryVariableItem array )
     {
         instructions.add( "#Accessing an element" );
         instructions.add("#of array " + array.getVariable().getName() );
         instructions.add( "li $a1 , 0" );
-        //int size = indices.size();
         for( int i = 0 ; i < size ; i++ )
         {
             instructions.add( "lw $a0, " + -4 * ( size - i ) + "($fp)");
@@ -307,35 +464,6 @@ public class Translator
         instructions.add( "#Access End" );
     }
 
-    /*public void addLvalueAddressToStack( String name , Register base , int adr ){
-//      System.out.println( "pushing to stack");
-//      int adr = table.getAddress(s)*(-1);
-        instructions.add("# start of adding variable " + name + " to stack");
-        instructions.add("lw $a0, " + adr + "(" + base.toString() + ")");
-        instructions.add("sw $a0, 0($fp)");
-        instructions.add("addi $fp, $fp, 4");
-        instructions.add("# end of adding variable " + name + " to stack\n");
-    }*/
-
-
-    /*public void addAddressToStack(String s, int adr) {
-//        int adr = table.getAddress(s)*(-1);
-        instructions.add("# start of adding address to stack");
-        instructions.add("addiu $a0, $fp, " + adr);
-        instructions.add("sw $a0, 0($sp)");
-        instructions.add("addiu $sp, $sp, -4");
-        instructions.add("# end of adding address to stack");
-    }*/
-
-    /*public void addGlobalAddressToStack(String s, int adr){
-//        int adr = table.getAddress(s)*(-1);
-        instructions.add("# start of adding global address to stack");
-        instructions.add("addiu $a0, $gp, " + adr);
-        instructions.add("sw $a0, 0($sp)");
-        instructions.add("addiu $sp, $sp, -4");
-        instructions.add("# end of adding global address to stack");
-    }*/
-
     public void popStack(){
         instructions.add("# pop stack");
         instructions.add("addiu $fp, $fp, -4");
@@ -351,21 +479,7 @@ public class Translator
         instructions.add("li $v0, " + x);
         instructions.add("syscall");
         instructions.add("# end syscall");
-    }/*
-
-    public void assignCommand(){
-        instructions.add("# start of assign");
-        instructions.add("lw $a0, 4($sp)");
-        popStack();
-        instructions.add("lw $a1, 4($sp)");
-        popStack();
-        instructions.add("sw $a0, 0($a1)");
-        instructions.add("sw $a0, 0($sp)");
-        instructions.add("addiu $sp, $sp, -4");
-        popStack();
-        instructions.add("# end of assign");
-    }*/
-
+    }
     public void generateCodeForNonEqualityBinaryArithmetic( String s )
     {
         Hashtable<String,String> opHash = new Hashtable<String,String>();
@@ -384,7 +498,7 @@ public class Translator
         instructions.add( opHash.get( s ) + " $a0, $a1, $a0");
     }
 
-    public void generateCodeForEquality( String operator , SymbolTableTemporaryVariableItem t1 , int isLValue2 )
+    public void generateCodeForEqualityOrCompare( String operator , SymbolTableTemporaryVariableItem t1 , int isLValue2 )
     {
         int incValue1 = -4 , incValue2 = -4;
         if( t1.isLValue == 0 )
@@ -396,19 +510,42 @@ public class Translator
         instructions.add( "lw $s2, -4($fp)" );
         instructions.add( "li $a1, 0" );
         instructions.add( "li $a0, " + ( t1.getVariable().size() / Type.WORD_BYTES  ) );
-        instructions.add( "LOOP" + labelNum + ": beq $a1, $a0, CONTINUE" + ( labelNum + 1 ) );
+        String continue1 = "CONTINUE" + ( labelNum + 1 );
+        String loop = "LOOP" + labelNum;
+        labelNum++;
+        instructions.add( loop + ": beq $a1, $a0, " + continue1 );
         instructions.add( "lw $s0, 0($s2)");
         instructions.add( "lw $s1, 0($s3)");
-        instructions.add( "xor $s5, $s0, $s1" );
-        if( operator.equals( "==" ))
-            instructions.add( "xori $s5, $s5, 1" );
+        if( operator.equals( "==" ) )
+            generateForEquality( operator );
+        else if( operator.equals( "<" ) || operator.equals( ">" ) )
+            generateForCompare( operator );
         instructions.add( "and $s4, $s4, $s5" );
         instructions.add( "addiu $a1, $a1, 1" );
         instructions.add( "addiu $s2, $s2, " + incValue1 );
         instructions.add( "addiu $s3, $s3, " + incValue2 );
-        instructions.add( "j LOOP" + labelNum );
+        instructions.add( "j " + loop );
+        instructions.add( continue1 + ": nop" );
+    }
+
+    public void generateForEquality( String operator )
+    {
+        instructions.add( "xor $s5, $s0, $s1" );
+        instructions.add( "beq $s5, 0, CONTINUE" + ( labelNum + 1 ) );
+        instructions.add( "li $s5, 1" );
+        instructions.add( "CONTINUE" + ( labelNum + 1 ) + ": nop" );
         labelNum++;
-        instructions.add( "CONTINUE" + labelNum + ": nop" );
+        instructions.add( "xori $s5, $s5, 1" );
+
+    }
+
+
+    public void generateForCompare( String operator )
+    {
+        if( operator.equals( "<" ) )
+            instructions.add( "slt $s5, $s0, $s1" );
+        else if( operator.equals( ">" ) )
+            instructions.add( "slt $s5, $s1, $s0" ); 
     }
 
    	public void generateCodeForRecord( ArrayList<SymbolTableTemporaryVariableItem> list )
@@ -440,6 +577,7 @@ public class Translator
         instructions.add( "addiu $a0, $t6, 4" );
         instructions.add( "sw $a0, 0($fp)" );
         instructions.add( "addiu $fp, $fp, 4" );
+        instructions.add( "#end of making record" );
    	}
 
     public void operationCommand(String s) {
@@ -447,37 +585,6 @@ public class Translator
         if (s.equals("*") || s.equals("/") || s.equals( "+" ) || s.equals( "-" ) || s.equals( ">") 
         || s.equals( "<" ) || s.equals( "and" ) || s.equals( "or" ) )
             generateCodeForNonEqualityBinaryArithmetic( s );
-        /*else if(s.equals("<>")){
-            instructions.add("lw $a0 ,0($fp)");
-            popStack();
-            instructions.add("lw $a1, 0($fp)");
-            popStack();
-            instructions.add("bne $a1,$a0, "+labelNum+"true");
-            instructions.add("sw $zero , 0($fp)");
-            instructions.add("add $fp,$fp,4");
-            instructions.add("j "+labelNum+"cmpcomplete");
-            instructions.add(labelNum+"true:");
-            instructions.add("addi $t5,$zero, 1");
-            instructions.add("sw $t5, 0($fp)");
-            instructions.add("add $fp,$fp,4");
-            instructions.add(labelNum+"cmpcomplete:");
-            labelNum++;
-       }*//*else if(s.equals("==")){
-            instructions.add("lw $a0 ,0($fp)");
-            popStack();
-            instructions.add("lw $a1, 0($fp)");
-            popStack();
-            instructions.add("beq $a1,$a0, "+labelNum+"true");
-            instructions.add("sw $zero, 0($fp)");
-            instructions.add("add $fp,$fp,4");
-            instructions.add("j "+labelNum+"cmpcomplete");
-            instructions.add(labelNum+"true:");
-            instructions.add("addi $t5, $zero, 1");
-            instructions.add("sw $t5, 0($fp)");
-            instructions.add("add $fp,$fp,4");
-            instructions.add(labelNum+"cmpcomplete:");
-            labelNum++;
-        }*/
         else if(s.equals("notu") ){
             instructions.add("lw $a1, -4($fp)");
             instructions.add( "lw $a1, 0($a1)");
@@ -604,7 +711,7 @@ public class Translator
         printNewLine();
     }
     public void generateWrite( Type type , int isLValue ){
-        System.out.println( "hello" );
+        //System.out.println( "hello" );
     	instructions.add("#write started and its type is " + type.toString() );
     	if(type instanceof CharType){// it is assumed that head of stack is a \0 character
     		instructions.add("li $v0,11");

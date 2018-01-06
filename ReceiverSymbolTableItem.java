@@ -1,8 +1,9 @@
 import java.util.*;
 public class ReceiverSymbolTableItem extends SymbolTableItem{
-	
+	public boolean isInit;
 	public ReceiverSymbolTableItem() {
 		super();
+		isInit = false;
 		arguments=new ArrayList<>();
 		argumentsNames=new ArrayList<>();
 	}
