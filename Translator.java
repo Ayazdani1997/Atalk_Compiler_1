@@ -192,7 +192,7 @@ public class Translator
         labelNum++;
         //call code
         instructions.add("lw $t3, "+actorsMemoryAddresses.get(calleeActorName)+"($t1)");//zarfiate fe'eli load mishavad
-        instructions.add("addiu $t3 ,$t/3, -1");
+        instructions.add("addiu $t3 ,$t3, -1");
         instructions.add("sw $t3, "+actorsMemoryAddresses.get(calleeActorName)+"($t1)");//zarfiat yeki kam mishavad
         instructions.add("addi $t8,$t8,1");//te'edade kolle payamha yeki ziad mishavad
         instructions.add("lw $t5, "+(actorsMemoryAddresses.get(calleeActorName)+8)+"($t1)");//$t5 <- write pointer
